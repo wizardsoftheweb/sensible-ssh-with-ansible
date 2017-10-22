@@ -7,4 +7,4 @@ rm -f ./keys/*_rsa*
 
 common_opts="-P password -b 2048 -t rsa"
 
-ssh-keygen $common_opts -f keys/baseuser_generic_rsa -C baseuser@generic
+ssh-keygen "$common_opts" -f "$(dirname "${BASH_SOURCE[0]}")/keys/baseuser_generic_rsa" -C baseuser@generic
