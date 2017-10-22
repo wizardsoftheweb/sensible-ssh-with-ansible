@@ -1,6 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+HYPER_V_SWITCH = 'Default Switch'
 
 Vagrant.configure('2') do |config|
 
@@ -16,11 +17,12 @@ Vagrant.configure('2') do |config|
 
     controller.vm.provider 'hyperv' do |hyperv|
       hyperv.vmname = box_name
+      controller.vm.network 'public_network', bridge: HYPER_V_SWITCH
     end
 
     controller.vm.provision 'file', source: './provisioning', destination: '/tmp/provisioning'
 
-    if Vagrant::Util::Platform.windows? then
+    if Vagrant::Util::Platform.windows?
       controller.vm.provision 'shell' do |sh|
         sh.path = 'windows-provision.sh'
         sh.args = ['vagrant']
@@ -47,6 +49,7 @@ Vagrant.configure('2') do |config|
 
       virtual_machine.vm.provider 'hyperv' do |hyperv|
         hyperv.vmname = machine
+        virtual_machine.vm.network 'public_network', bridge: HYPER_V_SWITCH
       end
     end
   end
