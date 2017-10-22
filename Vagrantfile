@@ -43,7 +43,7 @@ Vagrant.configure('2') do |config|
       controller.vm.network 'public_network', bridge: HYPER_V_SWITCH
     end
 
-    controller.vm.provision 'file', source: './shell-provisioning/ssh', destination: '/tmp/all-ssh'
+    controller.vm.provision 'file', source: './shell-provisioning/ssh/keys', destination: '/tmp/all-ssh'
 
     controller.vm.provision 'shell' do |sh|
       sh.path = './shell-provisioning/generic.sh'
