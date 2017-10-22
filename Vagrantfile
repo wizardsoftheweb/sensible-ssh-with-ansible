@@ -1,17 +1,14 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-HostOptions = Struct.new(
-  :hostname
-  )
 
 Vagrant.configure('2') do |config|
-  config.vm.box = 'centos/7'
-  config.vm.network "public_network", bridge: "Default Switch"
-  # controller.vm.network "private_network", type: "dhcp"
 
   config.vm.define 'controller' do |controller|
     box_name = 'ansible_controller'
+
+    controller.vm.box = 'centos/7'
+    controller.vm.network 'private_network', type: 'dhcp'
 
     controller.vm.provider 'virtualbox' do |virtualbox|
       virtualbox.name = box_name
@@ -36,22 +33,20 @@ Vagrant.configure('2') do |config|
     end
   end
 
-  network = [
-    HostOptions.new("trantor"),
-    HostOptions.new("terminus"),
-    HostOptions.new("kalgan")
-  ]
+  machines = ['trantor', 'terminus', 'kalgan']
 
-  network.each do |machine|
-    config.vm.define machine.hostname do |virtual_machine|
-      virtual_machine.vm.hostname = machine.hostname
+  machines.each do |machine|
+    config.vm.define machine do |virtual_machine|
+      virtual_machine.vm.box = 'centos/7'
+      virtual_machine.vm.hostname = machine
+      virtual_machine.vm.network 'private_network', type: 'dhcp'
 
       virtual_machine.vm.provider 'virtualbox' do |virtualbox|
-        virtualbox.name = machine.hostname
+        virtualbox.name = machine
       end
 
       virtual_machine.vm.provider 'hyperv' do |hyperv|
-        hyperv.vmname = machine.hostname
+        hyperv.vmname = machine
       end
     end
   end
