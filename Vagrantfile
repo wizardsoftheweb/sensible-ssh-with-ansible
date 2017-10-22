@@ -32,7 +32,7 @@ Vagrant.configure('2') do |config|
     controller.vm.network 'private_network', type: 'dhcp'
 
     controller.ssh.user = 'baseuser'
-    controller.ssh.private_key_path = './shell-provisioning/ssh/baseuser_generic_rsa'
+    controller.ssh.private_key_path = './shell-provisioning/ssh/keys/baseuser_generic_rsa'
 
     controller.vm.provider 'virtualbox' do |virtualbox|
       virtualbox.name = box_name
