@@ -46,7 +46,7 @@ Vagrant.configure('2') do |config|
     controller.vm.provision 'file', source: './shell-provisioning/ssh', destination: '/tmp/all-ssh'
 
     controller.vm.provision 'shell' do |sh|
-      sh.path = '.shell-provisioning/ansible_controller.sh'
+      sh.path = '.shell-provisioning/generic.sh'
       sh.privileged = true
     end
 
