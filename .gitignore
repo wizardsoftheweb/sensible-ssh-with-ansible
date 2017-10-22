@@ -1,0 +1,10 @@
+# Local configurations
+.gitconfig
+# Editors
+.idea
+*.sublime-*
+# Generated folders
+.vagrant
+# Personal working files (you might not need these)
+scratch.ts
+README.html
