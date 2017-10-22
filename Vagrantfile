@@ -65,22 +65,22 @@ Vagrant.configure('2') do |config|
     end
   end
 
-  machines = ['trantor', 'terminus', 'kalgan']
+  # machines = ['trantor', 'terminus', 'kalgan']
 
-  machines.each do |machine|
-    config.vm.define machine do |virtual_machine|
-      virtual_machine.vm.box = 'centos/7'
-      virtual_machine.vm.hostname = machine
-      virtual_machine.vm.network 'private_network', type: 'dhcp'
+  # machines.each do |machine|
+  #   config.vm.define machine do |virtual_machine|
+  #     virtual_machine.vm.box = 'centos/7'
+  #     virtual_machine.vm.hostname = machine
+  #     virtual_machine.vm.network 'private_network', type: 'dhcp'
 
-      virtual_machine.vm.provider 'virtualbox' do |virtualbox|
-        virtualbox.name = machine
-      end
+  #     virtual_machine.vm.provider 'virtualbox' do |virtualbox|
+  #       virtualbox.name = machine
+  #     end
 
-      virtual_machine.vm.provider 'hyperv' do |hyperv|
-        hyperv.vmname = machine
-        virtual_machine.vm.network 'public_network', bridge: HYPER_V_SWITCH
-      end
-    end
-  end
+  #     virtual_machine.vm.provider 'hyperv' do |hyperv|
+  #       hyperv.vmname = machine
+  #       virtual_machine.vm.network 'public_network', bridge: HYPER_V_SWITCH
+  #     end
+  #   end
+  # end
 end
