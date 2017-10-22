@@ -46,7 +46,7 @@ Vagrant.configure('2') do |config|
     controller.vm.provision 'file', source: './shell-provisioning/ssh', destination: '/tmp/all-ssh'
 
     controller.vm.provision 'shell' do |sh|
-      sh.path = '.shell-provisioning/generic.sh'
+      sh.path = './shell-provisioning/generic.sh'
       sh.privileged = true
     end
 
@@ -54,13 +54,13 @@ Vagrant.configure('2') do |config|
 
     if Vagrant::Util::Platform.windows?
       controller.vm.provision 'shell' do |sh|
-        sh.path = 'shell-provisioning/ansible_runner.sh'
+        sh.path = './shell-provisioning/ansible_runner.sh'
         sh.args = ['vagrant']
         sh.privileged = true
       end
     else
       controller.vm.provision 'ansible' do |ansible|
-        ansible.playbook = 'provisioning/main.yml'
+        ansible.playbook = './provisioning/main.yml'
       end
     end
   end
