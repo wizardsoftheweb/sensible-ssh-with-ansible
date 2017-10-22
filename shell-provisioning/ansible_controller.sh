@@ -1,5 +1,6 @@
 #!/bin/bash
 
+sudo su -
 useradd baseuser -G wheel
 mkdir -p /home/baseuser/.ssh
 chown -R baseuser:baseuser /home/baseuser
