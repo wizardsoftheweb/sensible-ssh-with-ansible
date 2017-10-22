@@ -1,9 +1,28 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+unless Vagrant.has_plugin?('vagrant-triggers')
+  `vagrant plugin install vagrant-triggers`
+end
+
+# TODO: pull these from ENV with defaults
+# HYPER_V_SWITCH = 'NATWotwSsh'
+# HYPER_V_SWITCH_IP_FIRST_THREE = '10.47.1'
+
 HYPER_V_SWITCH = 'Default Switch'
 
 Vagrant.configure('2') do |config|
+  # Be careful; triggers are run for each machine
+  # if Vagrant::Util::Platform.windows?
+  #   [:up, :reload].each do |command|
+  #     config.trigger.before command do
+  #       run "powershell.exe powershell/network.ps1 -Switch #{HYPER_V_SWITCH} -LeadingThree #{HYPER_V_SWITCH_IP_FIRST_THREE} -Create"
+  #     end
+  #   end
+  #   config.trigger.after :destroy do
+  #     run "powershell.exe powershell/network.ps1 -Switch #{HYPER_V_SWITCH} -Destroy"
+  #   end
+  # end
 
   config.vm.define 'controller' do |controller|
     box_name = 'ansible_controller'
