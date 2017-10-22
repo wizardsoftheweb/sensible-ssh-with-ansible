@@ -12,4 +12,4 @@ else
     sudo pip install ansible
 fi
 
-su - $ansible_user -c "cd /tmp/provisioning && ansible-playbook --connection=local -i inventories/localhost/hosts.yml main.yml"
+su - $ansible_user -c "cd /tmp/provisioning && ansible-playbook -i inventory main.yml"
