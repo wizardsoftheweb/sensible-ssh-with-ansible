@@ -54,7 +54,7 @@ Vagrant.configure('2') do |config|
 
     if Vagrant::Util::Platform.windows?
       controller.vm.provision 'shell' do |sh|
-        sh.path = 'windows-provision.sh'
+        sh.path = 'shell-provisioning/ansible_runner.sh'
         sh.args = ['vagrant']
         sh.privileged = true
       end
