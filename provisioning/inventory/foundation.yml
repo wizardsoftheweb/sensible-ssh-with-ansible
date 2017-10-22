@@ -1,0 +1,6 @@
+foundation:
+  hosts:
+    trantor:
+      ansible_user: bob
+    terminus:
+    kalgan:
