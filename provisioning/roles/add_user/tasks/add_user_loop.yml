@@ -28,13 +28,13 @@
     mode: u=rw,go=r
     owner: "{{ user_to_add.username }}"
 
-- name: Create authorized_keys
-  include_role:
-    name: add_user
-    tasks_from: build_authorized_keys
+- name: "Create authorized_keys for {{ user_to_add.username }}"
+  authorized_key:
+    user: "{{ user_to_add.username }}"
+    state: present
+    key: "{{ lookup('file', \"{{ key_dir }}/{{ item.username }}_{{ item.host|default(inventory_hostname, true) }}_rsa.pub\") }}"
+    exclusive: "{{ true if user_to_add.exclusive_keys|default(false, true) == true else omit }}"
   with_items: "{{ user_to_add.keys_to_authorize }}"
-  loop_control:
-    loop_var: key_meta
 
 - name: "Ensure {{ user_to_add.username }} owns /home/{{ user_to_add.username }}"
   file:
