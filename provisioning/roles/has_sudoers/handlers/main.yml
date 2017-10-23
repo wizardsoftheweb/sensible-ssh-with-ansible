@@ -1,0 +1,27 @@
+---
+- name: Enforce sudoers.d directory permissions
+  file:
+    path: /etc/sudoers.d
+    state: directory
+    mode: u=rw,g=r
+    owner: root
+  listen: "sudoers.d updated"
+  notify: "sudoers updated"
+
+- name: Enforce sudoers.d content permissions
+  file:
+    path: "{{ item.path }}"
+    state: "{{ item.state }}"
+    mode: u=rw,g=r
+    owner: root
+  with_filetree: /etc/sudoers.d
+  listen: "sudoers.d updated"
+  notify: "sudoers updated"
+
+- name: Ensure sudoers.d is loaded
+  lineinfile:
+    path: /etc/sudoers
+    line: "#includedir /etc/sudoers.d"
+    mode: u=r,g=r
+    validate: "/usr/sbin/visudo -c"
+  listen: "sudoers updated"
