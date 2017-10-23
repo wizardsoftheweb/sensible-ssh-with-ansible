@@ -10,5 +10,5 @@
     line: "{{ pub_key.stdout }}"
     create: yes
     state: present
-    mode: 0600
+    mode: u=rw
     owner: "{{ user_to_add.username }}"

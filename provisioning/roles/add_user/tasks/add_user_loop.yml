@@ -11,21 +11,21 @@
   file:
     path: "/home/{{ user_to_add.username }}/.ssh"
     state: directory
-    mode: 0700
+    mode: u=rwx
     owner: "{{ user_to_add.username }}"
 
 - name: "Copy {{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa to id_rsa"
   copy:
     src: "{{ key_dir }}/{{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa"
     dest: "/home/{{ user_to_add.username }}/.ssh/id_rsa"
-    mode: 0600
+    mode: u=rw
     owner: "{{ user_to_add.username }}"
 
 - name: "Copy {{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa/pub to id_rsa.pub"
   copy:
     src: "{{ key_dir }}/{{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa.pub"
     dest: "/home/{{ user_to_add.username }}/.ssh/id_rsa.pub"
-    mode: 0644
+    mode: u=rw,go=r
     owner: "{{ user_to_add.username }}"
 
 - name: Create authorized_keys
@@ -42,5 +42,6 @@
     state: directory
     owner: "{{ user_to_add.username }}"
     recurse: yes
+    mode: u=rwx
   when: user_to_add.chown_home == true
 
