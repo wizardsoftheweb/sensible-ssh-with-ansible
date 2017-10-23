@@ -48,16 +48,14 @@ Vagrant.configure('2') do |config|
   # end
 
   config.vm.define 'controller' do |controller|
-    box_name = 'ansible_controller'
-
     controller.vm.hostname = 'generic'
 
     controller.vm.provider 'virtualbox' do |virtualbox|
-      virtualbox.name = box_name
+      virtualbox.name = controller.vm.hostname
     end
 
     controller.vm.provider 'hyperv' do |hyperv|
-      hyperv.vmname = box_name
+      hyperv.vmname = controller.vm.hostname
     end
 
     controller.vm.provision "shell" do |sh|
