@@ -74,15 +74,13 @@ Vagrant.configure('2') do |config|
       ansible.playbook = "initial-setup.yml"
       ansible.install_mode = "pip"
       ansible.config_file = "/tmp/provisioning/ansible.cfg"
-      ansible.provisioning_path = "/tmp/provisioning"
     end
     # END WARNING
 
     # This one's okay to duplicate
     controller.vm.provision "ansible" do |ansible|
-      ansible.playbook = "main.yml"
+      ansible.playbook = "/tmp/provisioning/main.yml"
       ansible.config_file = "/tmp/provisioning/ansible.cfg"
-      ansible.provisioning_path = "/tmp/provisioning"
     end
   end
 end
