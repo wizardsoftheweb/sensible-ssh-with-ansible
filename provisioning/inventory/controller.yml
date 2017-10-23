@@ -2,4 +2,4 @@ controller:
   hosts:
     localhost:
       ansible_connection: local
-      ansible_user: vagrant
+      ansible_user: baseuser

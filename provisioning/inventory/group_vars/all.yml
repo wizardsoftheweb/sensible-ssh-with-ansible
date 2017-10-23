@@ -1,2 +1,4 @@
 ---
+ansible_become_method: sudo
+ansible_become_user: root
 config_directory: "/home/{{ ansible_user }}/.config/wotw-ansible"
