@@ -70,7 +70,12 @@ Vagrant.configure('2') do |config|
       sh.privileged = true
     end
 
-    controller.vm.provision 'file', source: './provisioning', destination: '/tmp/provisioning'
+    controller.vm.provision "shell" do |sh|
+      sh.inline = "yum list installed cifs-utils || yum install -y cifs-utils"
+      sh.privileged = true
+    end
+
+    controller.vm.synced_folder "./provisioning/", "/tmp/provisioning", type: "cifs"
 
     controller.vm.provision "ansible" do |ansible|
       ansible.playbook = "main.yml"
