@@ -52,22 +52,12 @@ Vagrant.configure('2') do |config|
 
     controller.vm.hostname = 'generic'
 
-    controller.ssh.user = 'baseuser'
-    controller.ssh.private_key_path = './shell-provisioning/ssh/keys/baseuser_generic_rsa'
-
     controller.vm.provider 'virtualbox' do |virtualbox|
       virtualbox.name = box_name
     end
 
     controller.vm.provider 'hyperv' do |hyperv|
       hyperv.vmname = box_name
-    end
-
-    controller.vm.provision 'file', source: './shell-provisioning/ssh/keys', destination: '/tmp/all-ssh'
-
-    controller.vm.provision 'shell' do |sh|
-      sh.path = './shell-provisioning/generic.sh'
-      sh.privileged = true
     end
 
     controller.vm.provision "shell" do |sh|
@@ -77,6 +67,20 @@ Vagrant.configure('2') do |config|
 
     controller.vm.synced_folder "./provisioning/", "/tmp/provisioning", type: "cifs"
 
+    # WARNING: DUPLICATE THIS IN YOUR ENVIRONMENT AT YOUR OWN RISK
+    # If you're running on Windows, you have to virtualize ansible anyway, so no
+    # harm there. Either way, I highly recommend you test it virtually to
+    # understand how it works before applying it to your environment.
+    # See https://www.vagrantup.com/docs/provisioning/ansible_local.html#install
+    controller.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "initial-setup.yml"
+      ansible.install_mode = "pip"
+      ansible.config_file = "/tmp/provisioning/ansible.cfg"
+      ansible.provisioning_path = "/tmp/provisioning"
+    end
+    # END WARNING
+
+    # This one's okay to duplicate
     controller.vm.provision "ansible" do |ansible|
       ansible.playbook = "main.yml"
       ansible.config_file = "/tmp/provisioning/ansible.cfg"
