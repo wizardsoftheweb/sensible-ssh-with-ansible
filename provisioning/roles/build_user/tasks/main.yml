@@ -1,0 +1,12 @@
+---
+- name: Ensure output directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items: "{{ needed_directories }}"
+
+- name: Generate ssh key
+  command: "ssh-keygen -P password -b 2048 -t rsa -f '{{ key_dir }}/{{ item.username }}_{{ item.host }}_rsa' -C {{ item.username }}@{{ item.host }}"
+  args:
+    creates: "{{ key_dir }}/{{ item.username }}_{{ item.host }}_rsa*"
+  with_items: "{{ users_to_build }}"
