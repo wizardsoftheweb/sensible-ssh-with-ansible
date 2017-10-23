@@ -1,0 +1,7 @@
+---
+- include_role:
+    name: add_user
+    tasks_from: add_user_loop
+  with_items: "{{ users_to_add }}"
+  loop_control:
+    loop_var: user_to_add
