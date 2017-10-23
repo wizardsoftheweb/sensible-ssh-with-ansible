@@ -24,12 +24,17 @@ Vagrant.configure('2') do |config|
   #   end
   # end
 
+  config.vm.box = 'centos/7'
+  config.vm.network 'private_network', type: 'dhcp'
+
+  config.vm.provider 'hyperv' do |hyperv|
+    config.vm.network 'public_network', bridge: HYPER_V_SWITCH
+  end
+
   config.vm.define 'controller' do |controller|
     box_name = 'ansible_controller'
 
-    controller.vm.box = 'centos/7'
     controller.vm.hostname = 'generic'
-    controller.vm.network 'private_network', type: 'dhcp'
 
     controller.ssh.user = 'baseuser'
     controller.ssh.private_key_path = './shell-provisioning/ssh/keys/baseuser_generic_rsa'
@@ -40,7 +45,6 @@ Vagrant.configure('2') do |config|
 
     controller.vm.provider 'hyperv' do |hyperv|
       hyperv.vmname = box_name
-      controller.vm.network 'public_network', bridge: HYPER_V_SWITCH
     end
 
     controller.vm.provision 'file', source: './shell-provisioning/ssh/keys', destination: '/tmp/all-ssh'
@@ -69,9 +73,7 @@ Vagrant.configure('2') do |config|
 
   # machines.each do |machine|
   #   config.vm.define machine do |virtual_machine|
-  #     virtual_machine.vm.box = 'centos/7'
   #     virtual_machine.vm.hostname = machine
-  #     virtual_machine.vm.network 'private_network', type: 'dhcp'
 
   #     virtual_machine.vm.provider 'virtualbox' do |virtualbox|
   #       virtualbox.name = machine
@@ -79,7 +81,6 @@ Vagrant.configure('2') do |config|
 
   #     virtual_machine.vm.provider 'hyperv' do |hyperv|
   #       hyperv.vmname = machine
-  #       virtual_machine.vm.network 'public_network', bridge: HYPER_V_SWITCH
   #     end
   #   end
   # end
