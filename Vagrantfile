@@ -31,6 +31,22 @@ Vagrant.configure('2') do |config|
     config.vm.network 'public_network', bridge: HYPER_V_SWITCH
   end
 
+  # machines = ['trantor', 'terminus', 'kalgan']
+
+  # machines.each do |machine|
+  #   config.vm.define machine do |virtual_machine|
+  #     virtual_machine.vm.hostname = machine
+
+  #     virtual_machine.vm.provider 'virtualbox' do |virtualbox|
+  #       virtualbox.name = machine
+  #     end
+
+  #     virtual_machine.vm.provider 'hyperv' do |hyperv|
+  #       hyperv.vmname = machine
+  #     end
+  #   end
+  # end
+
   config.vm.define 'controller' do |controller|
     box_name = 'ansible_controller'
 
@@ -56,32 +72,10 @@ Vagrant.configure('2') do |config|
 
     controller.vm.provision 'file', source: './provisioning', destination: '/tmp/provisioning'
 
-    if Vagrant::Util::Platform.windows?
-      controller.vm.provision 'shell' do |sh|
-        sh.path = './shell-provisioning/ansible_runner.sh'
-        sh.args = ['vagrant']
-        sh.privileged = true
-      end
-    else
-      controller.vm.provision 'ansible' do |ansible|
-        ansible.playbook = './provisioning/main.yml'
-      end
+    controller.vm.provision "ansible" do |ansible|
+      ansible.playbook = "main.yml"
+      ansible.config_file = "/tmp/provisioning/ansible.cfg"
+      ansible.provisioning_path = "/tmp/provisioning"
     end
   end
-
-  # machines = ['trantor', 'terminus', 'kalgan']
-
-  # machines.each do |machine|
-  #   config.vm.define machine do |virtual_machine|
-  #     virtual_machine.vm.hostname = machine
-
-  #     virtual_machine.vm.provider 'virtualbox' do |virtualbox|
-  #       virtualbox.name = machine
-  #     end
-
-  #     virtual_machine.vm.provider 'hyperv' do |hyperv|
-  #       hyperv.vmname = machine
-  #     end
-  #   end
-  # end
 end
