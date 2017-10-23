@@ -45,3 +45,12 @@
     mode: u=rwx
   when: user_to_add.chown_home == true
 
+- name: "Remove sudo passwd for {{ user_to_add.username }}"
+  template:
+    src: etc/sudoers.d/user
+    dest: "/etc/sudoers.d/{{ user_to_add.username }}"
+    mode: u=r,g=r
+    owner: root
+    validate: "/usr/sbin/visudo -c -f %s"
+  when: user_to_add.easy_sudo|default(false, true) == true
+  notify: "sudoers.d updated"
