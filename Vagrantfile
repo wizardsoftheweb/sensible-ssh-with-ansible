@@ -91,10 +91,10 @@ Vagrant.configure('2') do |config|
     end
     # END WARNING
 
-    # This one's okay to duplicate
-    controller.vm.provision "ansible" do |ansible|
-      ansible.playbook = "/tmp/provisioning/main.yml"
-      ansible.config_file = "/tmp/provisioning/ansible.cfg"
-    end
+    # # This one's okay to duplicate
+    # controller.vm.provision "ansible" do |ansible|
+    #   ansible.playbook = "/tmp/provisioning/main.yml"
+    #   ansible.config_file = "/tmp/provisioning/ansible.cfg"
+    # end
   end
 end
