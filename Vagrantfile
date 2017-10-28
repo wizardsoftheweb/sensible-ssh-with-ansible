@@ -84,6 +84,9 @@ Vagrant.configure('2') do |config|
     controller.vm.provision "ansible_local" do |ansible|
       ansible.playbook = "initial-setup.yml"
       ansible.install_mode = "pip"
+      ansible.limit = controller.vm.hostname
+      ansible.provisioning_path = "/tmp/provisioning"
+      ansible.inventory_path = "/tmp/provisioning/inventory"
       ansible.config_file = "/tmp/provisioning/ansible.cfg"
     end
     # END WARNING
