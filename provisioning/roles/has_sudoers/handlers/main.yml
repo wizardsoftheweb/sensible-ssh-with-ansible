@@ -3,8 +3,9 @@
   file:
     path: /etc/sudoers.d
     state: directory
-    mode: u=rw,g=r
+    mode: "u=rw,g=rw,a=r"
     owner: root
+    group: root
   listen: "sudoers.d updated"
   notify: "sudoers updated"
 
@@ -12,8 +13,9 @@
   file:
     path: "{{ item.path }}"
     state: "{{ item.state }}"
-    mode: u=rw,g=r
-    owner: root
+    mode: "u=rw,g=r"
+    owner: "{{ item.path | basename }}"
+    group: root
   with_filetree: /etc/sudoers.d
   listen: "sudoers.d updated"
   notify: "sudoers updated"
@@ -22,6 +24,6 @@
   lineinfile:
     path: /etc/sudoers
     line: "#includedir /etc/sudoers.d"
-    mode: u=r,g=r
+    mode: "u=r,g=r"
     validate: "/usr/sbin/visudo -c"
   listen: "sudoers updated"
