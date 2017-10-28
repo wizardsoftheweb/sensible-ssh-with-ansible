@@ -4,3 +4,6 @@ setup:
       ansible_host: localhost
       ansible_connection: local
       ansible_user: vagrant
+      ansible_become: yes
+      ansible_become_user: root
+      ansible_become_method: sudo
