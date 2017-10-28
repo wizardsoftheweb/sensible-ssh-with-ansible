@@ -58,12 +58,23 @@ Vagrant.configure('2') do |config|
       hyperv.vmname = controller.vm.hostname
     end
 
+
+# Doesn't work; folders are mounted pre-provisioning
+# See https://seven.centos.org/2017/09/updated-centos-vagrant-images-available-v1708-01/
+    mount_packages = "nfs-utils nfs-utils-lib"
+    mount_type = "nfs"
+    if Vagrant::Util::Platform.windows?
+      mount_packages = "cifs-utils"
+      mount_type = "smb"
+    end
+
     controller.vm.provision "shell" do |sh|
-      sh.inline = "yum list installed cifs-utils || yum install -y cifs-utils"
+      sh.inline = "yum list installed #{mount_packages} || yum install -y #{mount_packages}"
       sh.privileged = true
     end
 
-    controller.vm.synced_folder "./provisioning/", "/tmp/provisioning", type: "cifs"
+    controller.vm.synced_folder "./provisioning/", "/tmp/provisioning", type: mount_type
+# End doesn't work
 
     # WARNING: DUPLICATE THIS IN YOUR ENVIRONMENT AT YOUR OWN RISK
     # If you're running on Windows, you have to virtualize ansible anyway, so no
