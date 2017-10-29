@@ -47,6 +47,7 @@ script:
     || (echo 'Idempotence test: fail' && exit 1)
   - >
     sudo chown -R $USER generated
+    && chmod 0644 generated/keys/*_rsa
     && sshpass -p 'password' ssh -Tv -F /dev/null -o StrictHostKeyChecking=no -i ./generated/keys/baseuser_generic_rsa.pub baseuser@localhost
     && exit 0
     || exit 1
