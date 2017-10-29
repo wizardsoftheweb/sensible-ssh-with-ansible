@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/wizardsoftheweb/securing-and-automating-ssh-configuration.svg?branch=master)](https://travis-ci.org/wizardsoftheweb/securing-and-automating-ssh-configuration)
+
 This is the code behind a longer blog post. Cool things currently in the repo include
 
 * A broken [networking script](powershell) because I apparently can't follow instructions
