@@ -6,6 +6,7 @@
     append: true
     home: "/home/{{ user_to_add.username }}"
     state: present
+  become: yes
 
 - name: Ensure .ssh directory exists with the correct permissions
   file:
@@ -15,6 +16,7 @@
     recurse: no
     owner: "{{ user_to_add.username }}"
     group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
+  become: yes
 
 - name: "Copy {{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa to id_rsa"
   copy:
@@ -24,6 +26,7 @@
     owner: "{{ user_to_add.username }}"
     group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
     backup: yes
+  become: yes
   register: privkey_update
 
 - name: "Copy {{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa.pub to id_rsa.pub"
@@ -34,6 +37,7 @@
     owner: "{{ user_to_add.username }}"
     group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
     backup: yes
+  become: yes
 
 - name: "Create authorized_keys for {{ user_to_add.username }}"
   authorized_key:
@@ -42,6 +46,7 @@
     key: "{{ lookup('file', \"{{ key_dir }}/{{ item.username }}_{{ item.host|default(inventory_hostname, true) }}_rsa.pub\") }}"
     exclusive: "{{ true if user_to_add.exclusive_keys|default(false, true) == true else omit }}"
   with_items: "{{ user_to_add.keys_to_authorize }}"
+  become: yes
 
 - name: "Ensure {{ user_to_add.username }} owns /home/{{ user_to_add.username }}"
   file:
@@ -50,6 +55,7 @@
     owner: "{{ user_to_add.username }}"
     group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
     recurse: yes
+  become: yes
   when: user_to_add.chown_home == true
 
 - name: "Remove sudo passwd for {{ user_to_add.username }}"
@@ -61,6 +67,7 @@
     group: root
     validate: "/usr/sbin/visudo -cf %s"
     backup: yes
+  become: yes
   register: add_sudoers
   notify: "sudoers.d updated"
   when: user_to_add.easy_sudo|default(false, true) == true
