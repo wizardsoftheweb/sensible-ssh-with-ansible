@@ -14,7 +14,6 @@
 - name: Enforce sudoers.d content permissions
   file:
     path: "{{ item.path }}"
-    state: "{{ item.state }}"
     mode: "u=r,g=r,o="
     owner: "{{ item.path | basename }}"
     group: root
