@@ -27,6 +27,7 @@ install:
 before_script:
   - cd provisioning
   - ansible --version
+  - eval `ssh-agent`
 
 # TODO: write some real tests
 # stdout is redirected to /dev/null because we don't care if it works
@@ -43,5 +44,5 @@ script:
     && (echo 'Idempotence test: pass' && exit 0)
     || (echo 'Idempotence test: fail' && exit 1)
   - ssh-add -f generated/keys/baseuser_generic_rsa <<< password
-  - ssh baseuser@localhost
+  - ssh -o StrictHostKeyChecking=no baseuser@localhost
   # - ansible-playbook main.yml --syntax-check >/dev/null
