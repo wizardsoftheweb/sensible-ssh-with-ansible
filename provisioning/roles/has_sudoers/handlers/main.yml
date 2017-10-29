@@ -14,11 +14,13 @@
 - name: Enforce sudoers.d content permissions
   file:
     path: "{{ item.path }}"
+    state: present
     mode: "u=r,g=r,o="
     owner: root
     group: root
   become: yes
   with_filetree: /etc/sudoers.d
+  when: item.state == 'file'
   listen: "sudoers directory updated"
   notify: "sudoers files updated"
 
