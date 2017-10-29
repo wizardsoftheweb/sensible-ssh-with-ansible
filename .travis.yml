@@ -6,7 +6,7 @@ notifications:
 
 # Created with help from https://www.ansible.com/blog/testing-ansible-roles-with-docker
 sudo: required
-dist: trusty
+dist: precise
 language: python
 python: "2.7"
 
