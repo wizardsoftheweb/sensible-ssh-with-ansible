@@ -13,7 +13,7 @@
 
 - name: Enforce sudoers.d content permissions
   file:
-    path: "{{ item.path }}"
+    path: "/etc/sudoers.d/{{ item.path }}"
     state: file
     mode: "u=r,g=r,o="
     owner: root
