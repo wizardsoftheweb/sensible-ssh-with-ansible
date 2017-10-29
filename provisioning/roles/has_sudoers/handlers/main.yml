@@ -3,22 +3,23 @@
   file:
     path: /etc/sudoers.d
     state: directory
-    mode: "u=rw,g=rw,a=r"
+    recurse: no
+    mode: "u=rwx,g=rx"
     owner: root
     group: root
   listen: "sudoers.d updated"
-  notify: "sudoers updated"
+  notify: "sudoers directory updated"
 
 - name: Enforce sudoers.d content permissions
   file:
     path: "{{ item.path }}"
     state: "{{ item.state }}"
-    mode: "u=rw,g=r"
+    mode: "u=r,g=r"
     owner: "{{ item.path | basename }}"
     group: root
   with_filetree: /etc/sudoers.d
-  listen: "sudoers.d updated"
-  notify: "sudoers updated"
+  listen: "sudoers directory updated"
+  notify: "sudoers files updated"
 
 - name: Ensure sudoers.d is loaded
   lineinfile:
@@ -26,4 +27,4 @@
     line: "#includedir /etc/sudoers.d"
     mode: "u=r,g=r"
     validate: "/usr/sbin/visudo -c"
-  listen: "sudoers updated"
+  listen: "sudoers files updated"
