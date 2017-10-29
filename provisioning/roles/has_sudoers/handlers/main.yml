@@ -15,7 +15,7 @@
   file:
     path: "{{ item.path }}"
     mode: "u=r,g=r,o="
-    owner: "{{ item.path | basename }}"
+    owner: root
     group: root
   become: yes
   with_filetree: /etc/sudoers.d
