@@ -35,4 +35,10 @@ script:
   # Validate and run the test setup
   - ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml --syntax-check >/dev/null
   - sudo ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml
+  # https://www.jeffgeerling.com/blog/testing-ansible-roles-travis-ci-github#user-content-role-idempotence
+  - >
+    sudo ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml
+    | grep -q 'changed=0.*failed=0'
+    && (echo 'Idempotence test: pass' && exit 0)
+    || (echo 'Idempotence test: fail' && exit 1)
   # - ansible-playbook main.yml --syntax-check >/dev/null
