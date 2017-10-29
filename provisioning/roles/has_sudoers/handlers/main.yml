@@ -4,20 +4,23 @@
     path: /etc/sudoers.d
     state: directory
     recurse: no
-    mode: "u=rwx,g=rx"
+    mode: "u=rwx,g=rx,o="
     owner: root
     group: root
+  become: yes
   listen: "sudoers.d updated"
   notify: "sudoers directory updated"
 
 - name: Enforce sudoers.d content permissions
   file:
-    path: "{{ item.path }}"
-    state: "{{ item.state }}"
-    mode: "u=r,g=r"
-    owner: "{{ item.path | basename }}"
+    path: "/etc/sudoers.d/{{ item.path }}"
+    state: file
+    mode: "u=r,g=r,o="
+    owner: root
     group: root
+  become: yes
   with_filetree: /etc/sudoers.d
+  when: item.state == 'file'
   listen: "sudoers directory updated"
   notify: "sudoers files updated"
 
@@ -27,4 +30,5 @@
     line: "#includedir /etc/sudoers.d"
     mode: "u=r,g=r"
     validate: "/usr/sbin/visudo -c"
+  become: yes
   listen: "sudoers files updated"
