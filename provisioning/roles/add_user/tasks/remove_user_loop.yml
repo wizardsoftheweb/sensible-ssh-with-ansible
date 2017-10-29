@@ -1,0 +1,19 @@
+---
+- name: "Ensure {{ user_to_add.username }} does not exist"
+  user:
+    name: "{{ user_to_add.username }}"
+    state: absent
+  become: yes
+
+- name: "Ensure /home/{{ user_to_add.username }} does not exist"
+  file:
+    path: "/home/{{ user_to_add.username }}"
+    state: absent
+  become: yes
+
+- name: "Ensure sudo access for {{ user_to_add.username }} does not exist"
+  file:
+    path: "/etc/sudoers.d/{{ user_to_add.username }}"
+    state: absent
+  become: yes
+  notify: "sudoers.d updated"
