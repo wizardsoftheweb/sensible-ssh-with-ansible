@@ -12,7 +12,9 @@
     path: "/home/{{ user_to_add.username }}/.ssh"
     state: directory
     mode: "u=rwx"
+    recurse: no
     owner: "{{ user_to_add.username }}"
+    group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
 
 - name: "Copy {{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa to id_rsa"
   copy:
@@ -20,14 +22,17 @@
     dest: "/home/{{ user_to_add.username }}/.ssh/id_rsa"
     mode: "u=rw"
     owner: "{{ user_to_add.username }}"
+    group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
     backup: yes
+  register: privkey_update
 
-- name: "Copy {{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa/pub to id_rsa.pub"
+- name: "Copy {{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa.pub to id_rsa.pub"
   copy:
     src: "{{ key_dir }}/{{ user_to_add.username }}_{{ user_to_add.host|default(inventory_hostname, true) }}_rsa.pub"
     dest: "/home/{{ user_to_add.username }}/.ssh/id_rsa.pub"
     mode: "u=rw,go=r"
     owner: "{{ user_to_add.username }}"
+    group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
     backup: yes
 
 - name: "Create authorized_keys for {{ user_to_add.username }}"
@@ -43,16 +48,19 @@
     path: "/home/{{ user_to_add.username }}"
     state: directory
     owner: "{{ user_to_add.username }}"
+    group: "{{ user_to_add.primary_group|default(user_to_add.username, true) }}"
     recurse: yes
-    mode: "u=rwx"
   when: user_to_add.chown_home == true
 
 - name: "Remove sudo passwd for {{ user_to_add.username }}"
   template:
-    src: etc/sudoers.d/user
+    src: etc/sudoers.d/user.j2
     dest: "/etc/sudoers.d/{{ user_to_add.username }}"
-    mode: u=r,g=r
-    owner: root
-    validate: "/usr/sbin/visudo -c -f %s"
-  when: user_to_add.easy_sudo|default(false, true) == true
+    mode: "u=r,g=r"
+    owner: "{{ user_to_add.username }}"
+    group: root
+    validate: "/usr/sbin/visudo -cf %s"
+    backup: yes
+  register: add_sudoers
   notify: "sudoers.d updated"
+  when: user_to_add.easy_sudo|default(false, true) == true
