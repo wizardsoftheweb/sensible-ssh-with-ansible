@@ -43,6 +43,6 @@ script:
     | grep -q 'changed=0.*failed=0'
     && (echo 'Idempotence test: pass' && exit 0)
     || (echo 'Idempotence test: fail' && exit 1)
-  - ssh-add -f generated/keys/baseuser_generic_rsa <<< password
+  - ssh-add generated/keys/baseuser_generic_rsa <<< password
   - ssh -o StrictHostKeyChecking=no baseuser@localhost
   # - ansible-playbook main.yml --syntax-check >/dev/null
