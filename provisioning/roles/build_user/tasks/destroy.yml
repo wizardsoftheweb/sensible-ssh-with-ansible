@@ -1,0 +1,5 @@
+- name: Ensure output directories do not exist
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items: "{{ needed_directories }}"

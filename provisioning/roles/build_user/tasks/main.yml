@@ -1,22 +1,6 @@
 ---
-- name: Ensure output directories exist
-  file:
-    path: "{{ item }}"
-    state: directory
-  with_items: "{{ needed_directories }}"
+- include_tasks: create.yml
+  when: build_user_rollback !== true
 
-- name: Generate ssh key
-  command: "ssh-keygen -P password -b 2048 -t rsa -f '{{ key_dir }}/{{ item.username }}_{{ item.host }}_rsa' -C {{ item.username }}@{{ item.host }}"
-  args:
-    creates: "{{ key_dir }}/{{ item.username }}_{{ item.host }}_rsa*"
-  with_items: "{{ users_to_build }}"
-
-- name: Get directory contents for debugging
-  command: "ls -alh {{ key_dir }}"
-  changed_when: false
-  register: key_files
-  tags: debug
-
-- debug:
-    var: key_files.stdout
-  tags: debug
+- include_tasks: destroy.yml
+  when: build_user_rollback === true
