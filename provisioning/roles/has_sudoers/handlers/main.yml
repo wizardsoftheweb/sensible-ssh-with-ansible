@@ -4,7 +4,7 @@
     path: /etc/sudoers.d
     state: directory
     recurse: no
-    mode: "u=rwx,g=rx"
+    mode: "u=rwx,g=rx,o="
     owner: root
     group: root
   listen: "sudoers.d updated"
@@ -14,7 +14,7 @@
   file:
     path: "{{ item.path }}"
     state: "{{ item.state }}"
-    mode: "u=r,g=r"
+    mode: "u=r,g=r,o="
     owner: "{{ item.path | basename }}"
     group: root
   with_filetree: /etc/sudoers.d

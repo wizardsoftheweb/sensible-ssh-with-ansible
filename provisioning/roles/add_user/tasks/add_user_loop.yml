@@ -62,7 +62,7 @@
   template:
     src: etc/sudoers.d/user.j2
     dest: "/etc/sudoers.d/{{ user_to_add.username }}"
-    mode: "u=r,g=r"
+    mode: "u=r,g=r,o="
     owner: "{{ user_to_add.username }}"
     group: root
     validate: "/usr/sbin/visudo -cf %s"
