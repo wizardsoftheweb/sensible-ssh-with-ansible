@@ -21,7 +21,7 @@ before_install:
 
 install:
   # Install Ansible.
-  - sudo pip install ansible
+  - sudo -H pip install ansible
 
 before_script:
   - cd provisioning
@@ -34,5 +34,5 @@ script:
   - ansible-playbook initial-setup.yml --syntax-check >/dev/null
   # Validate and run the test setup
   - ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml --syntax-check >/dev/null
-  - ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml
+  - sudo ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml
   # - ansible-playbook main.yml --syntax-check >/dev/null
