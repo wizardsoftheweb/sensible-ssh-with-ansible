@@ -7,6 +7,7 @@
     mode: "u=rwx,g=rx,o="
     owner: root
     group: root
+  become: yes
   listen: "sudoers.d updated"
   notify: "sudoers directory updated"
 
@@ -17,6 +18,7 @@
     mode: "u=r,g=r,o="
     owner: "{{ item.path | basename }}"
     group: root
+  become: yes
   with_filetree: /etc/sudoers.d
   listen: "sudoers directory updated"
   notify: "sudoers files updated"
@@ -27,4 +29,5 @@
     line: "#includedir /etc/sudoers.d"
     mode: "u=r,g=r"
     validate: "/usr/sbin/visudo -c"
+  become: yes
   listen: "sudoers files updated"
