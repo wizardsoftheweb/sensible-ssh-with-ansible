@@ -47,4 +47,5 @@ script:
     || (echo 'Idempotence test: fail' && exit 1)
   - sudo diff /home/baseuser/.ssh/id_rsa ./generated/keys/baseuser_generic_rsa
   - sudo grep -q "$(cat ./generated/keys/baseuser_generic_rsa.pub)" /home/baseuser/.ssh/authorized_keys
+  - sudo su - baseuser -c 'sudo /bin/true'
   # - ansible-playbook main.yml --syntax-check >/dev/null
