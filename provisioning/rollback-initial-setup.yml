@@ -9,4 +9,4 @@
     - role: build_user
       build_user_rollback: true
     - role: add_user
-      rollback: true
+      add_user_rollback: true

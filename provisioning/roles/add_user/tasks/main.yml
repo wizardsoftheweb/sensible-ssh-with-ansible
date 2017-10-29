@@ -8,7 +8,7 @@
   with_items: "{{ users_to_add }}"
   loop_control:
     loop_var: user_to_add
-  when: rollback !== true
+  when: add_user_rollback !== true
 
 - include_role:
     name: add_user
@@ -16,4 +16,4 @@
   with_items: "{{ users_to_add }}"
   loop_control:
     loop_var: user_to_add
-  when: rollback === true
+  when: add_user_rollback === true
