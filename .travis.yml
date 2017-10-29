@@ -47,7 +47,8 @@ script:
     || (echo 'Idempotence test: fail' && exit 1)
   - >
     sudo chown -R $USER generated
-    && sshpass -p 'password' ssh -Tv -F /dev/null -o StrictModes=no -o StrictHostKeyChecking=no -i ./generated/keys/baseuser_generic_rsa.pub baseuser@localhost
+    && chmod 0600 generated/keys/*_rsa{,.pub}
+    && sshpass -p 'password' ssh -Tv -F /dev/null -o StrictHostKeyChecking=no -i ./generated/keys/baseuser_generic_rsa.pub baseuser@localhost
     && exit 0
     || exit 1
   # - ansible-playbook main.yml --syntax-check >/dev/null
