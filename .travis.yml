@@ -48,6 +48,6 @@ script:
   - sudo diff /home/baseuser/.ssh/id_rsa ./generated/keys/baseuser_generic_rsa
   - sudo grep -q "$(cat ./generated/keys/baseuser_generic_rsa.pub)" /home/baseuser/.ssh/authorized_keys
   - sudo su - baseuser -c 'sudo /bin/true'
-  - sudo ansible-playbook -i test/inventory.yml test/cleanup-initial-setup.yml
+  - sudo ansible-playbook -i test/inventory.yml cleanup-initial-setup.yml
   - getent passwd baseuser && exit 1 || exit 0
   # - ansible-playbook main.yml --syntax-check >/dev/null
