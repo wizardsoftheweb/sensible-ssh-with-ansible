@@ -24,12 +24,15 @@ install:
   - sudo pip install ansible
 
 before_script:
-  # - cd provisioning
+  - cd provisioning
   - ansible --version
 
 # TODO: write some real tests
 # stdout is redirected to /dev/null because we don't care if it works
 script:
+  # Validate the real setup
   - ansible-playbook initial-setup.yml --syntax-check >/dev/null
+  # Validate and run the test setup
+  - ansible-playbook -i test/inventory.yml initial-setup.yml >/dev/null
   - ansible-playbook -i test/inventory.yml initial-setup.yml
   # - ansible-playbook main.yml --syntax-check >/dev/null
