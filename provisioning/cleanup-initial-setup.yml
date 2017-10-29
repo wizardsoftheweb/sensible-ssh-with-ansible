@@ -6,5 +6,7 @@
     - "{{ playbook_dir }}/../vars/initial-setup.yml"
 
   roles:
+    - role: build_user
+      build_user_rollback: true
     - role: add_user
       rollback: true
