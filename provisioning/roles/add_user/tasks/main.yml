@@ -2,9 +2,10 @@
 - include_role:
     name: has_sudoers
 
-- include_role:
-    name: add_user
-    tasks_from: add_user_loop
+- set_fact:
+    tasks_to_include: "{{ 'remove_user_loop' if add_user_rollback|default(false, true) == true else 'add_user_loop' }}"
+
+- include_tasks: "{{ tasks_to_include }}.yml"
   with_items: "{{ users_to_add }}"
   loop_control:
     loop_var: user_to_add

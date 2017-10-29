@@ -7,4 +7,6 @@
 
   roles:
     - role: build_user
+      build_user_rollback: true
     - role: add_user
+      add_user_rollback: true
