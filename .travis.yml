@@ -33,6 +33,6 @@ script:
   # Validate the real setup
   - ansible-playbook initial-setup.yml --syntax-check >/dev/null
   # Validate and run the test setup
-  - ansible-playbook -i test/inventory.yml initial-setup.yml --syntax-check >/dev/null
-  - ansible-playbook -i test/inventory.yml initial-setup.yml
+  - ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml --syntax-check >/dev/null
+  - ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml
   # - ansible-playbook main.yml --syntax-check >/dev/null
