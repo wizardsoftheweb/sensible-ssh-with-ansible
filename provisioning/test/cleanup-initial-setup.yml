@@ -2,8 +2,8 @@
 - hosts: setup
 
   vars_files:
-    - "{{ playbook_dir }}/inventory/group_vars/controller.yml"
-    - "{{ playbook_dir }}/vars/initial-setup.yml"
+    - "{{ playbook_dir }}/../inventory/group_vars/controller.yml"
+    - "{{ playbook_dir }}/../vars/initial-setup.yml"
 
   roles:
     - role: add_user
