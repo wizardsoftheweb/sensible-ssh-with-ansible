@@ -13,6 +13,7 @@
 
 - name: Get directory contents for debugging
   command: "ls -alh {{ key_dir }}"
+  changed_when: false
   register: key_files
   tags: debug
 
