@@ -28,6 +28,8 @@ before_script:
   - cd provisioning
   - ansible --version
   - eval `ssh-agent`
+  # Debugging has_sudoers role
+  - sudo ls -alh /etc/sudoers.d
 
 # TODO: write some real tests
 # stdout is redirected to /dev/null because we don't care if it works
@@ -45,7 +47,7 @@ script:
     || (echo 'Idempotence test: fail' && exit 1)
   - >
     sudo chown -R $USER generated
-    && sshpass -p 'password' ssh -o StrictHostKeyChecking=no -i generated/keys/baseuser_generic_rsa baseuser@localhost 'lsb_release -a'
+    && sshpass -p 'password' ssh -Tv -o StrictHostKeyChecking=no -i ./generated/keys/baseuser_generic_rsa baseuser@localhost
     && exit 0
     || exit 1
   # - ansible-playbook main.yml --syntax-check >/dev/null
