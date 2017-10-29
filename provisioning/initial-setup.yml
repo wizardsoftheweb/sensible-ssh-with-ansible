@@ -8,6 +8,7 @@
     users_to_add:
       - username: baseuser
         chown_home: true
+        easy_sudo: true
         groups:
           - wheel
         keys_to_authorize:
