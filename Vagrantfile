@@ -61,19 +61,19 @@ Vagrant.configure('2') do |config|
 
 # Doesn't work; folders are mounted pre-provisioning
 # See https://seven.centos.org/2017/09/updated-centos-vagrant-images-available-v1708-01/
-    mount_packages = "nfs-utils nfs-utils-lib"
-    mount_type = "nfs"
+    mount_packages = 'nfs-utils nfs-utils-lib'
+    mount_type = 'nfs'
     if Vagrant::Util::Platform.windows?
-      mount_packages = "cifs-utils"
-      mount_type = "smb"
+      mount_packages = 'cifs-utils'
+      mount_type = 'smb'
     end
 
-    controller.vm.provision "shell" do |sh|
+    controller.vm.provision 'shell' do |sh|
       sh.inline = "yum list installed #{mount_packages} || yum install -y #{mount_packages}"
       sh.privileged = true
     end
 
-    controller.vm.synced_folder "./provisioning/", "/tmp/provisioning", type: mount_type
+    controller.vm.synced_folder './provisioning/', '/tmp/provisioning', type: mount_type
 # End doesn't work
 
     # WARNING: DUPLICATE THIS IN YOUR ENVIRONMENT AT YOUR OWN RISK
@@ -81,20 +81,20 @@ Vagrant.configure('2') do |config|
     # harm there. Either way, I highly recommend you test it virtually to
     # understand how it works before applying it to your environment.
     # See https://www.vagrantup.com/docs/provisioning/ansible_local.html#install
-    controller.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "initial-setup.yml"
-      ansible.install_mode = "pip"
-      ansible.limit = controller.vm.hostname
-      ansible.provisioning_path = "/tmp/provisioning"
-      ansible.inventory_path = "/tmp/provisioning/inventory"
-      ansible.config_file = "/tmp/provisioning/ansible.cfg"
+    controller.vm.provision 'ansible_local' do |ansible|
+      ansible.playbook = 'initial-setup.yml'
+      ansible.install_mode = 'pip'
+      # ansible.limit = controller.vm.hostname
+      # ansible.provisioning_path = '/tmp/provisioning'
+      # ansible.inventory_path = '/tmp/provisioning/inventory'
+      # ansible.config_file = '/tmp/provisioning/ansible.cfg'
     end
     # END WARNING
 
     # # This one's okay to duplicate
-    # controller.vm.provision "ansible" do |ansible|
-    #   ansible.playbook = "/tmp/provisioning/main.yml"
-    #   ansible.config_file = "/tmp/provisioning/ansible.cfg"
+    # controller.vm.provision 'ansible' do |ansible|
+    #   ansible.playbook = '/tmp/provisioning/main.yml'
+    #   ansible.config_file = '/tmp/provisioning/ansible.cfg'
     # end
   end
 end
