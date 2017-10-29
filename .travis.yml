@@ -18,7 +18,7 @@ before_install:
   - deactivate
   # Make sure everything's up to date.
   - sudo apt-get update -qq
-  - sudo apt-get install openssh-client
+  - sudo apt-get install openssh-client sshpass
 
 install:
   # Install Ansible.
@@ -44,6 +44,6 @@ script:
     && (echo 'Idempotence test: pass' && exit 0)
     || (echo 'Idempotence test: fail' && exit 1)
   - sudo chown -R $USER generated
-  - ssh-add generated/keys/baseuser_generic_rsa <<< password
+  - sshpass 'password' ssh-add generated/keys/baseuser_generic_rsa
   - ssh -o StrictHostKeyChecking=no baseuser@localhost
   # - ansible-playbook main.yml --syntax-check >/dev/null
