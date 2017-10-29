@@ -1,6 +1,6 @@
 ---
-- include_tasks: create.yml
-  when: build_user_rollback !== true
+- import_tasks: create.yml
+  when: build_user_rollback|default(false, true) != true
 
-- include_tasks: destroy.yml
-  when: build_user_rollback === true
+- import_tasks: destroy.yml
+  when: build_user_rollback|default(false, true) == true
