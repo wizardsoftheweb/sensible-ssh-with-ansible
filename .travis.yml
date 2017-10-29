@@ -4,11 +4,18 @@ notifications:
     on_success: never
     on_failure: change
 
-# Most of the content pulled from https://www.jeffgeerling.com/blog/testing-ansible-roles-travis-ci-github
+# Created with help from https://www.ansible.com/blog/testing-ansible-roles-with-docker
+sudo: required
+dist: trusty
 language: python
 python: "2.7"
 
+env:
+  global:
+    - PATH="/usr/bin:$PATH"
+
 before_install:
+  - deactivate
   # Make sure everything's up to date.
   - sudo apt-get update -qq
 
@@ -16,5 +23,13 @@ install:
   # Install Ansible.
   - pip install ansible
 
-# script:
-#   - ansible-playbook -i provisioning/inventories/localhost/hosts.yml provisioning/main.yml --syntax-check --connection=local
+before_script:
+  # - cd provisioning
+  - ansible --version
+
+# TODO: write some real tests
+# stdout is redirected to /dev/null because we don't care if it works
+script:
+  - ansible-playbook initial-setup.yml --syntax-check >/dev/null
+  - ansible-playbook -i test/inventory.yml initial-setup.yml
+  # - ansible-playbook main.yml --syntax-check >/dev/null
