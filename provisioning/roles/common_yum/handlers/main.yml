@@ -1,0 +1,22 @@
+---
+- name: "yum makecache fast"
+  command: "yum makecache fast"
+  become: yes
+  args:
+    warn: false
+  register: yum_makecache_fast
+  listen: "yum makecache fast"
+
+- name: Ensure config directory exists
+  file:
+    path: "{{ yum_cache.directory }}"
+    state: directory
+  when: yum_makecache_fast
+  listen: "yum makecache fast"
+
+- name: Touch .yum-cache-age
+  file:
+    path: "{{ yum_cache.directory }}/{{ yum_cache.filename }}"
+    state: touch
+  when: yum_makecache_fast
+  listen: "yum makecache fast"

@@ -4,17 +4,48 @@ notifications:
     on_success: never
     on_failure: change
 
-# Most of the content pulled from https://www.jeffgeerling.com/blog/testing-ansible-roles-travis-ci-github
+# Created with help from https://www.ansible.com/blog/testing-ansible-roles-with-docker
+sudo: required
+dist: precise
 language: python
 python: "2.7"
 
+env:
+  global:
+    - PATH="/usr/bin:$PATH"
+
 before_install:
+  - deactivate
   # Make sure everything's up to date.
   - sudo apt-get update -qq
+  - sudo apt-get install openssh-client sshpass
 
 install:
   # Install Ansible.
-  - pip install ansible
+  - sudo -H pip install ansible
 
-# script:
-#   - ansible-playbook -i provisioning/inventories/localhost/hosts.yml provisioning/main.yml --syntax-check --connection=local
+before_script:
+  - cd provisioning
+  - ansible --version
+  - eval `ssh-agent`
+  # Debugging has_sudoers role
+  - sudo ls -alh /etc/sudoers.d
+
+# TODO: write some real tests
+# stdout is redirected to /dev/null because we don't care if it works
+script:
+  # Validate the real setup
+  - ansible-playbook initial-setup.yml --syntax-check >/dev/null
+  # Validate and run the test setup
+  - ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml --syntax-check >/dev/null
+  - sudo ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml
+  # https://www.jeffgeerling.com/blog/testing-ansible-roles-travis-ci-github#user-content-role-idempotence
+  - >
+    sudo ansible-playbook -i test/inventory.yml test/pretest.yml initial-setup.yml
+    | grep -q 'changed=0.*failed=0'
+    && (echo 'Idempotence test: pass' && exit 0)
+    || (echo 'Idempotence test: fail' && exit 1)
+  - sudo diff /home/baseuser/.ssh/id_rsa ./generated/keys/baseuser_generic_rsa
+  - sudo grep -q "$(cat ./generated/keys/baseuser_generic_rsa.pub)" /home/baseuser/.ssh/authorized_keys
+  - sudo su - baseuser -c 'sudo /bin/true'
+  # - ansible-playbook main.yml --syntax-check >/dev/null

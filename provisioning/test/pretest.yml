@@ -1,0 +1,7 @@
+---
+- hosts: all
+  tasks:
+    - name: Ensure wheel group exists
+      group:
+        name: wheel
+        state: present

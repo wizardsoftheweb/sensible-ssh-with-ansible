@@ -1,0 +1,6 @@
+---
+- hosts: all:!setup
+
+  roles:
+    # `ansible_os_family` defined [here](https://github.com/ansible/ansible/blob/devel/lib/ansible/module_utils/facts/system/distribution.py#L406)
+    - { role: common_yum, when: ansible_os_family == "RedHat" }

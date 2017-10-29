@@ -1,0 +1,23 @@
+---
+- hosts: setup
+
+  vars:
+    users_to_build:
+      - username: baseuser
+        host: generic
+    users_to_add:
+      - username: baseuser
+        chown_home: true
+        easy_sudo: true
+        groups:
+          - wheel
+        keys_to_authorize:
+          - username: baseuser
+            host: generic
+
+  vars_files:
+    - "{{ playbook_dir }}/inventory/group_vars/controller.yml"
+
+  roles:
+    - role: build_user
+    - role: add_user

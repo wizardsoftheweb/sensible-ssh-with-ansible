@@ -1,0 +1,3 @@
+---
+needed_directories:
+  - "{{ key_dir }}"

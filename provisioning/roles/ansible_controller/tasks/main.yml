@@ -1,0 +1,7 @@
+---
+- name: Skeleton task
+  debug:
+    msg: 'Just checking'
+
+# - notify: Demo handler
+#   when: true
