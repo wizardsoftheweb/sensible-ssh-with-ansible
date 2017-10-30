@@ -1,0 +1,12 @@
+---
+role_dir: "{{ playbook_dir }}/roles/needs_ssh"
+
+source_packages:
+  default:
+    server:
+      - 'openssh-server'
+    client:
+      - 'openssh-client'
+  RedHat:
+    client:
+      - 'openssh-clients'
