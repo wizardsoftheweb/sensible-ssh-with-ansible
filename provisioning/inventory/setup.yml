@@ -14,8 +14,3 @@ setup:
   children:
     setup-controller:
     setup-foundation:
-  vars:
-    ansible_user: vagrant
-    ansible_become: yes
-    ansible_become_user: root
-    ansible_become_method: sudo
