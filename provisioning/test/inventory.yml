@@ -1,4 +1,4 @@
-setup:
+setup-controller:
   hosts:
     generic:
       ansible_host: localhost
