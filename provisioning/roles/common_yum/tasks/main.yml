@@ -1,5 +1,4 @@
 ---
-# The yum plugin doesn't have a way to do this automatically
 - name: Check last yum cache pull
   find:
     paths: "{{ yum_cache.directory }}"
@@ -14,11 +13,32 @@
   notify:
     - "yum makecache fast"
 
-# - meta: flush_handlers
-
-- name: Verify EPEL Release is installed
+- name: Ensure necessary packages are installed
   yum:
-    name: epel-release
+    name: "{{ item }}"
     state: present
     update_cache: no
   become: yes
+  with_items:
+    - epel-release
+    - yum-utils
+
+- name: Ensure yum retains cache forever
+  lineinfile:
+    path: /etc/yum.conf
+    regexp: "^\\s*{{ item.opt }}\\s*="
+    line: "{{ item.opt }}={{ item.value }}"
+    state: present
+    insertafter: '[main]'
+    owner: root
+    group: root
+    mode: 'u=rw,go=r'
+    create: false
+  become: yes
+  with_items:
+    - opt: keepcache
+      value: 1
+    - opt: metadata_expire
+      value: never
+    - opt: mirrorlist_expire
+      value: never
