@@ -47,11 +47,8 @@ def update_series_toc(contents):
 def update_repo_link(post_filename, contents):
     with file(os.path.join(post_dir, 'repo-link.md'), 'r') as repo_link:
         repo_link_contents = repo_link.read()
-        print repo_link_contents
         repo_link_contents = repo_link_contents.replace('~replace-me~', os.path.basename(os.path.splitext(post_filename)[0]))
-        print repo_link_contents
         contents = re.sub(repo_link_pattern, r'\1' + repo_link_contents.strip() + r'\2\n\n', contents)
-        print contents
     return contents
 
 def compile_includes(post_filename, contents):
