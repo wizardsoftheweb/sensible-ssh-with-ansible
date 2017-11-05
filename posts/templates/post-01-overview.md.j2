@@ -1,9 +1,8 @@
-{% include 'includes/intro.j2' %}
-
+{% extends 'base.md.j2' %}
+{% block leading_paragraph %}
 As the first post in the series, this will provide a roadmap for the series and a brief overview of the tools involved. If you're familiar with `ssh`, have a pretty good idea what Ansible is, and have either seen Vagrant before or have your own virtualization solution to use, you can probably skip this post.
-
-{% include 'includes/introduction.j2' %}
-
+{% end block %}
+{% block content %}
 ## Executive Summary
 
 If you do any sort of remote CLI interaction, you probably use `ssh` already. If you don't remote anywhere, or you don't use `ssh` when you do, you probably don't need to read this (but it can't hurt). Like most best practices, maintaining proper `ssh` can become a chore as your world expands across personal boxes, work machines, online VCS, freelance gigs, and so on. Easy solutions, like using the same key everywhere for years at a time, are nice both as a consumer and as an attacker because they've been so widely documented for years. Better solutions require time and effort to update configuration everywhere, retire old keys, and maintain provenance on new keys. The best solutions automate the entire process and notify you afterward. Using Ansible, my goal is to create such a solution that can be run indefinitely from a trusted control machine. Along the way, I also plan to include and test stronger configurations, randomized options, centralized validation, and probably a good selection of rabbit holes as I figure out how to code everything.
@@ -229,3 +228,4 @@ $ vagrant up
 ```
 
 **WARNING:** If you're on Windows running vanilla Containers and Hyper-V, you'll probably need to add `--provider=hyperv` to all `up` commands. If you're not running vanilla, you're probably already aware that trying to run another provider while Hyper-V is running (which is always unless you changed the boot config) won't be pretty. I crashed my system three times one weekend, initially trying to figure out what was wrong and later because I forgot to force Hyper-V.
+{% end block %}
