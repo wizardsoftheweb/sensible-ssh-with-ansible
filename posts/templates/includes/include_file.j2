@@ -1,5 +1,5 @@
-{%- macro include_file(current_tag, relative_path, language='') %}
-[`{{ relative_path }}`](//github.com/wizardsoftheweb/sensible-ssh-with-ansible/tree/{{ current_tag }}/{{ relative_path }}:
+{% macro include_file(current_tag, relative_path, language='') %}
+[`{{ relative_path }}` (source)](//github.com/wizardsoftheweb/sensible-ssh-with-ansible/tree/{{ current_tag }}/{{ relative_path }}):
 
 {{ include_with_default(current_tag, relative_path, language|e) }}
-{% endmacro -%}
+{% endmacro %}
