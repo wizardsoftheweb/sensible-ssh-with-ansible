@@ -1,7 +1,7 @@
 {% extends 'base.md.j2' %}
 {% block leading_paragraph %}
 As the first post in the series, this will provide a roadmap for the series and a brief overview of the tools involved. If you're familiar with `ssh`, have a pretty good idea what Ansible is, and have either seen Vagrant before or have your own virtualization solution to use, you can probably skip this post.
-{% end block %}
+{% endblock %}
 {% block content %}
 ## Executive Summary
 
@@ -11,7 +11,7 @@ I'm going to assume some familiarity with working in and with `bash`, but I also
 
 ## Note
 
-I included all of the code (as opposed to lazy loading) for the AMP CDN, which means [the remote](//github.com/wizardsoftheweb/sensible-ssh-with-ansible/tree/post-01-overview) might be ahead a bit. I'm still figuring out the balance between code blocks that are enjoyable to read and code blocks that don't look terrible. If something is completely unbearable via AMP, sorry I missed it, shoot me an email and I'll find a fix.
+I included all of the code (as opposed to lazy loading) for the AMP CDN, which means [the remote]({{ github_path(current_tag) }}) might be ahead a bit. I'm still figuring out the balance between code blocks that are enjoyable to read and code blocks that don't look terrible. If something is completely unbearable via AMP, sorry I missed it, shoot me an email and I'll find a fix.
 
 For the most part, you should assume a shell environment is a `bash` environment. I actually use `zsh`, so there might be some `zsh`isms mixed in. I've tried to make this run from start to finish via `/bin/bash`, so let me know if I missed something. The assumed-to-be-`bash` shell will look like this:
 
@@ -228,4 +228,4 @@ $ vagrant up
 ```
 
 **WARNING:** If you're on Windows running vanilla Containers and Hyper-V, you'll probably need to add `--provider=hyperv` to all `up` commands. If you're not running vanilla, you're probably already aware that trying to run another provider while Hyper-V is running (which is always unless you changed the boot config) won't be pretty. I crashed my system three times one weekend, initially trying to figure out what was wrong and later because I forgot to force Hyper-V.
-{% end block %}
+{% endblock %}
