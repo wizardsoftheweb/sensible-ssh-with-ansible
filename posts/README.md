@@ -26,9 +26,12 @@ If you have suggestions or improvements, I'd love to hear them. I have no idea w
 3. For each `post-*.j2` in `./templates`:
     1. render the template to `./build/post-*.md`
     2. insert TOC via [`markdown_toclify`](https://github.com/rasbt/markdown-toclify)
-    3. strip dashes from `markdown_toclify` slugs
+    3. ~~strip dashes from `markdown_toclify` slugs~~
+    3. parse basic `markdown_toclify` and insert links
 
 I've [submitted a PR](https://github.com/rasbt/markdown-toclify/pull/14) to include the final action in `markdown_toclify`, but it might not get approved.
+
+However, `markdown_toclify` parses all lines. In doing so, it strips left whitespace, which completely breaks codeblocks. The `nolink` option prevents `markdown_toclify` from doing so, but also requires additional work to build links.
 
 ## TODOs
 
