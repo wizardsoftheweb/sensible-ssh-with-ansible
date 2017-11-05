@@ -6,7 +6,7 @@ provisioning_dir = os.path.join(post_dir, '..', 'provisioning')
 
 generic_flags = re.IGNORECASE | re.DOTALL
 
-bash_block_regex = r'<!--\s+wotw-build-bash\s+(.*?)\s+/wotw-build-bash\s+-->\s*```(\w+)?(.*?)```'
+bash_block_regex = r'(<!--\s+wotw-build-bash\s+(.*?)\s*?\n\s*-->)(\s*```.*?```)?\s*(?:\n\r?)'
 bash_block_pattern = re.compile(bash_block_regex, generic_flags)
 
 # TODO: DRY this up a bit
@@ -23,19 +23,23 @@ include_pattern = re.compile(include_regex, generic_flags)
 def compile_bash(contents):
     for found_block in re.finditer(bash_block_pattern, contents):
         original_block = found_block.group()
-        output = ''
+        new_block = found_block.group(1)
+        new_block += os.linesep
+        new_block += '```'
+        working_directory = os.getcwd()
         os.chdir(root_dir)
-        for masked_command_to_run in found_block.group(1).split('\n'):
+        for masked_command_to_run in found_block.group(2).split('\n'):
             command_to_run = ast.literal_eval(masked_command_to_run)
             readable_command = ' '.join(command_to_run)
             command_output = subprocess.check_output(command_to_run)
-            output += os.linesep
-            output += "$ %(readable_command)s" % locals()
-            output += os.linesep
-            output += command_output
-        os.chdir(post_dir)
-        updated_block = original_block.replace(found_block.group(3), output)
-        contents = contents.replace(original_block, updated_block)
+            new_block += os.linesep
+            new_block += "$ %(readable_command)s" % locals()
+            new_block += os.linesep
+            new_block += command_output
+        os.chdir(working_directory)
+        new_block += '```'
+        new_block += os.linesep + os.linesep
+        contents = contents.replace(original_block, new_block)
     return contents
 
 def update_series_toc(contents):
