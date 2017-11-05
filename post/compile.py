@@ -1,26 +1,40 @@
 import ast, glob, os, re, subprocess
 
+# Specify a few important directories
 post_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(post_dir)
 provisioning_dir = os.path.join(post_dir, '..', 'provisioning')
 
+# Common regex flags
 generic_flags = re.IGNORECASE | re.DOTALL
 
+# TODO: Is regex compilation necessary?
+
+# Specify the pattern for a bash block
 bash_block_regex = r'(<!--\s+wotw-build-bash\s+(.*?)\s*?\n\s*-->)(\s*```.*?```)?\s*(?:\n\r?)'
 bash_block_pattern = re.compile(bash_block_regex, generic_flags)
 
 # TODO: DRY this up a bit
 # TODO: learn how to reuse raw strings
+
+# Specify the TOC pattern
 series_toc_regex = r'(<!--\s+wotw-series-toc\s+-->\n\r?).*?(\n?\r?<!--\s+/wotw-series-toc\s+-->)\s*'
 series_toc_pattern = re.compile(series_toc_regex, generic_flags)
 
+# Specify the repo link pattern
 repo_link_regex = r'(<!--\s+wotw-repo-link\s+-->\n\r?).*?(\n?\r?<!--\s+/wotw-repo-link\s+-->)\s*'
 repo_link_pattern = re.compile(repo_link_regex, generic_flags)
 
+# Specify the file include pattern
 include_regex = r'(<!--\s+wotw-include-file\s+filename:\s*(.*?)(\s+language:\s*(.*?))?\s+-->)(\s*\[.*?:)?(\s*```.*?```)?\s*(?:\n\r?)'
 include_pattern = re.compile(include_regex, generic_flags)
 
 def compile_bash(contents):
+    """Compile any found bash references
+
+    Keyword arguments:
+    contents -- post contents to update
+    """
     for found_block in re.finditer(bash_block_pattern, contents):
         original_block = found_block.group()
         new_block = found_block.group(1)
@@ -43,12 +57,23 @@ def compile_bash(contents):
     return contents
 
 def update_series_toc(contents):
+    """Refresh the TOC
+
+    Keyword arguments:
+    contents -- post contents to update
+    """
     with file(os.path.join(post_dir, 'series-toc.md'), 'r') as series_toc:
         toc_contents = series_toc.read()
         contents = re.sub(series_toc_pattern, r'\1' + toc_contents.strip() + r'\2\n\n', contents)
     return contents
 
 def update_repo_link(post_filename, contents):
+    """Refresh the repo link
+
+    Keyword arguments:
+    post_filename -- The post filename, whose basename minus extension is used as the git tag
+    contents -- post contents to update
+    """
     with file(os.path.join(post_dir, 'repo-link.md'), 'r') as repo_link:
         repo_link_contents = repo_link.read()
         repo_link_contents = repo_link_contents.replace('~replace-me~', os.path.basename(os.path.splitext(post_filename)[0]))
@@ -56,6 +81,12 @@ def update_repo_link(post_filename, contents):
     return contents
 
 def compile_includes(post_filename, contents):
+    """Load local includes from the proper revision. Defaults to the current working tree.
+
+    Keyword arguments:
+    post_filename -- The post filename, whose basename minus extension is used as the git tag
+    contents -- post contents to update
+    """
     current_tag = os.path.basename(os.path.splitext(post_filename)[0])
     repo_root = '//github.com/wizardsoftheweb/sensible-ssh-with-ansible/tree/'
     repo_root += current_tag
@@ -84,6 +115,11 @@ def compile_includes(post_filename, contents):
     return contents
 
 def compile_post(post_filename):
+    """Compiles a single post.
+
+    Keyword arguments:
+    post_filename -- The path to the post to compile
+    """
     with file(post_filename, 'r+') as post_to_compile:
         post_contents = post_to_compile.read()
         post_contents = update_series_toc(post_contents)
@@ -95,9 +131,9 @@ def compile_post(post_filename):
         post_to_compile.write(post_contents)
 
 def compile_all_posts():
+    """Compiles all the posts"""
     for post_file in glob.glob(os.path.join(post_dir, 'post-*.md')):
         compile_post(post_file)
 
+# Compile all the things
 compile_all_posts()
-
-# compile_post(os.path.join(post_dir, 'sample.md'))
