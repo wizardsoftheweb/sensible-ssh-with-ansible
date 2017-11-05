@@ -1,0 +1,9 @@
+{%- macro insert_bash(list_of_command_tuples=[]) %}
+{% if list_of_command_tuples is defined %}
+```
+{%- for command_tuple in list_of_command_tuples %}
+{{ run_bash(command_tuple) }}
+{% endfor -%}
+```
+{% endif %}
+{% endmacro -%}
