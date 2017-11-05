@@ -63,14 +63,19 @@ This file contains information necessary to manage all the remotes. The host-spe
 
 Ansible provides an easy way to reuse content in inventories. If you'll notice above, I never specified `ansible_user: baseuser`. That's because I moved as many of the variables as possible to the magic directory `group_vars`. When Ansible loads a host, it searches several predefined paths, including `groups_vars`. There, files named after specific groups are attached to `hosts` and can be overwritten at each level.
 
-`all` is a magic group that contains, as you might have guessed, all of the `hosts` discovered in the inventory. I use its `group_vars` to define global options:
+`all` is a magic group that contains, as you might have guessed, all of the `hosts` discovered in the inventory. I use its `group_vars` to define global options.
+
+{{ include_file(current_tag, 'provisioning/inventory/group_vars/all.yml') }}
 
 
-That `ansible_user` won't work until after the machines are provisioned, so I override `all`'s `ansible_user` with the `setup` `group_vars`:
+That `ansible_user` won't work until after the machines are provisioned, so I override `all`'s `ansible_user` with the `setup` `group_vars`.
+
+{{ include_file(current_tag, 'provisioning/inventory/group_vars/setup.yml') }}
 
 
-Finally, I use a common directory to communicate between roles on `controller`. Although its primary consumer is `controller`, I still need access to it during the `initial-setup` playbook. I could duplicate the variable, requiring updates in multiple locations, or I could move the variable to a file that can be included. I went with the latter, with this as `controller`'s `group_vars`:
+Finally, I use a common directory to communicate between roles on `controller`. Although its primary consumer is `controller`, I still need access to it during the `initial-setup` playbook. I could duplicate the variable, requiring updates in multiple locations, or I could move the variable to a file that can be included.
 
+{{ include_file(current_tag, 'provisioning/inventory/group_vars/controller.yml') }}
 
 
 ## Roles
