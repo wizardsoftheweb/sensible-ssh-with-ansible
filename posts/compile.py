@@ -25,13 +25,14 @@ def include_with_default(current_tag, relative_path, language):
     language = language or path.splitext(path.basename(relative_path))[1].replace('.', '')
     new_include = "```%(language)s\n" % locals()
     try:
-        new_include += check_output(
+        loaded_contents = check_output(
             ['git', 'show', current_tag + ':' + relative_path],
              stderr=open(devnull, 'w')
         )
     except CalledProcessError:
         with file(path.join(root_dir, relative_path), 'r') as file_to_include:
-            new_include += file_to_include.read()
+            loaded_contents = file_to_include.read()
+    new_include += "%(loaded_contents)s\n" % locals()
     new_include += '```\n'
     return new_include
 
