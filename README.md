@@ -6,6 +6,7 @@ This is the code behind a longer blog post. Cool things currently in the repo in
 * A [multimachine `Vagrantfile`](Vagrantfile) to simulate a network with `ssh` boxes
 * Ansible roles to [build simple users](provisioning/roles/build_user) and [attach them](provisioning/roles/add_user) to generic boxes
 * Very simple [playbook tests](.travis.yml)
+* A [common build script](posts) (via Jinja!) for the posts
 
 Cool things that will eventually be in this repo (or a continuation) include
 
