@@ -1,17 +1,27 @@
 ---
+# Call out the controller, which will run the tasks
+# In theory you could have several controllers, defined in this group
 setup-controller:
   hosts:
+    # I don't want to refer to localhost, so I rename it...
     generic:
+      # and define ansible_host as the real location
       ansible_host: localhost
+      # this lets ansible know it's running locally, which can be important
       ansible_connection: local
 
+# This group lists all three foundation hosts
 setup-foundation:
+  # No options are set per key because they're currently vanilla Vagrant VMS
+  # ansible_connection isn't set because ansible isn't running locally for these hosts
   hosts:
     trantor:
     terminus:
     kalgan:
 
+# Link the two setup groups to share super variables
 setup:
+  # This key lets us specify existing groups as descendents
   children:
     setup-controller:
     setup-foundation:
