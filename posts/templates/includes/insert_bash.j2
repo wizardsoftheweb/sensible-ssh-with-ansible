@@ -3,7 +3,8 @@
 ```
 {%- for command_tuple in list_of_command_tuples %}
 {{ run_bash(command_tuple) }}
-{% endfor -%}
+
+{%- endfor -%}
 ```
 {% endif %}
 {% endmacro -%}
