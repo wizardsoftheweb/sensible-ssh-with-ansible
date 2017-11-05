@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/wizardsoftheweb/securing-and-automating-ssh-configuration.svg?branch=master)](https://travis-ci.org/wizardsoftheweb/securing-and-automating-ssh-configuration)
+[![Build Status](https://travis-ci.org/wizardsoftheweb/sensible-ssh-with-ansible.svg?branch=master)](https://travis-ci.org/wizardsoftheweb/sensible-ssh-with-ansible)
 
 This is the code behind a longer blog post. Cool things currently in the repo include
 
