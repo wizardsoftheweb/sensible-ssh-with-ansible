@@ -1,0 +1,118 @@
+{% extends 'base.md.j2' %}
+{% block leading_paragraph %}
+This post serves as an introduction to Ansible. However, many of its components will turn up again later, so it's worth a quick skim. The code presented here is overly verbose; if you're already comfortable with Ansible, just ignore the comments as you skim.
+
+WARNING: If you're skimming this on GitHub, this post isn't even in the draft phase yet. Expect everything to change.
+{% endblock %}
+{% block content %}
+## Populating the Status Quo
+
+None of the previous Vagrant stuff really matters if you have an existing network of boxes you'd love to absolutely ruin. Ansible is the way to do that. I'm going to explain the configuration I used to provision my demo network.
+
+I'm going to follow a few horrible common practices while setting up the environment, like using as many defaults as I can get away with. I want to emphasize that this phase is about defining the problem, not presenting a solution. That comes later.
+
+I define all of the pieces of the playbooks before using any of them. If you're impatient, you can jump immediately to [Playbooks](#playbooks). You can also test specific items [via ad-hoc commands](https://ansible-tips-and-tricks.readthedocs.io/en/latest/ansible/commands/).
+
+## `ansible.cfg`
+
+This is my base `ansible.cfg`. [Defaults](http://docs.ansible.com/ansible/latest/intro_configuration.html) are used everywhere else.
+
+{{ include_file(current_tag, 'provisioning/ansible.cfg') }}
+
+Inventory is explained [in its titular section](#inventory). [The second option, `retry_files_save_path`](http://docs.ansible.com/ansible/latest/intro_configuration.html#retry-files-save-path), moves Ansible `.retry` files to a common directory which is ignored by VCS. These files (which are [woefully underdocumented](https://github.com/ansible/ansible/search?utf8=%E2%9C%93&q=retry_files_enabled+&type=)) are created by Ansible when something goes wrong, and can be used to limit execution on that host. They're a great feature but a nightmare to manage when created unfettered in the wild.
+
+## Common Assumptions
+
+* [The common user throughout]({{ github_path(current_tag, 'provisioning/vars/initial-setup.yml') }}) is `baseuser` with a few service accounts scattered throughout. Wherever you see `baseuser`, that's you.
+* `baseuser` has `sudo` access on hosts that require configuration changes and might not elsewhere
+* `baseuser` is set up to have `NOPASSWD` `sudo`. Requiring a `sudo` password adds an extra line of defense when your keys are compromised; as annoying as it is, I prefer that extra bit of security.
+* Unless otherwise specified, [the `ssh` passphrase for any generated key]({{ github_path(current_tag, 'provisioning/roles/build_user/tasks/create.yml') }}) is `password`. I wouldn't recommend using that in production, and it will be changed as I harden the configuration.
+
+## Inventory
+
+[Ansible's Inventory](http://docs.ansible.com/ansible/latest/intro_inventory.html) provides all the information necessary to manage the desired remotes. You'll need to add things like addresses and usernames, so be careful with your inventory. Don't expose it unless you have to (I plan to touch on a solution in a later post).
+
+You can also use [dynamic inventories](http://docs.ansible.com/ansible/latest/intro_dynamic_inventory.html), generated from local code or API returns. I really want to try this, and might hit it later.
+
+I've created three logical inventory files for my demo network, located in [`inventory`]({{ github_path(current_tag, '/provisioning/inventory') }}).
+
+For reference, here's the current `inventory` directory:
+
+{{ run_bash(['tree', 'inventory', '--dirsfirst']) }}
+
+### `setup.yml`
+
+This file contains configuration necessary for the machine that will intially provision all the nodes:
+
+
+
+### `controller.yml`
+
+This file contains information necessary for the control machine(s) (after `initial-setup` in my example). It's pretty slim because doesn't need to do much.
+
+
+
+### `foundation.yml`
+
+This file contains information necessary to manage all the remotes. The host-specific items, moreso than the others, will most likely change as the repo matures; expect different users and new hosts in future posts.
+
+
+
+### Group Variables
+
+Ansible provides an easy way to reuse content in inventories. If you'll notice above, I never specified `ansible_user: baseuser`. That's because I moved as many of the variables as possible to the magic directory `group_vars`. When Ansible loads a host, it searches several predefined paths, including `groups_vars`. There, files named after specific groups are attached to `hosts` and can be overwritten at each level.
+
+`all` is a magic group that contains, as you might have guessed, all of the `hosts` discovered in the inventory. I use its `group_vars` to define global options:
+
+
+That `ansible_user` won't work until after the machines are provisioned, so I override `all`'s `ansible_user` with the `setup` `group_vars`:
+
+
+Finally, I use a common directory to communicate between roles on `controller`. Although its primary consumer is `controller`, I still need access to it during the `initial-setup` playbook. I could duplicate the variable, requiring updates in multiple locations, or I could move the variable to a file that can be included. I went with the latter, with this as `controller`'s `group_vars`:
+
+
+
+## Roles
+
+Roles provide a way to reuse Ansible code. Chances are, if you're doing it once, you're going to do it again. You'll probably do it again elsewhere. From a code perspective, roles add a few nice features. They're isolated, which means they're way more maintainable. They also provide [a relative directory structure](https://docs.ansible.com/ansible/2.4/playbooks_reuse_roles.html#id5), so you can scope effectively.
+
+For this first post, I've created [a few simple roles]({{ github_path(current_tag, '/provisioning/roles/') }}). Right now, they build fairly insecure configurations, so there's a great chance they'll change as the series progresses. I'll start with the roles that ensure a universal base environment, and finish with the roles that create unique configuration per host.
+
+For reference, here's the current `roles` structure:
+
+
+### Role Anatomy
+
+Roles are found in the `roles_path`, which is simply `roles` here. Each subdirectory of `roles` is assumed to be a `role`. Each `role` can be defined in various ways. The simplest method, taken from [the best practices](https://docs.ansible.com/ansible/2.4/playbooks_reuse_roles.html#id5), is to create a subdirectory for any defined elements containing at least a `main.yml`. Any other files can be referenced relatively, but are not automatically used. If this doesn't make sense right now, it should clear up with some examples.
+
+### `needs_ssh`
+
+
+
+This role serves more as a feature demo than anything else. I was curious if I could create a role capable of installing OpenSSH on Debian and RHEL.
+
+It requires a few variables, defined in `vars/main.yml`:
+
+
+When applied, the `role` begins with `main.yml`. [The global `ansible_os_family`](https://groups.google.com/d/msg/ansible-project/OZPu-b17n_w/aljBZKx8AgAJ) comes from a list of architectures than can mostly describe OS groups.
+
+
+The `Debian` task is very straightforward:
+
+
+The `RedHat` tasks are slightly more involved:
+
+
+
+### `common_yum`
+
+
+
+The best practices [define a `common` role](http://docs.ansible.com/ansible/latest/playbooks_best_practices.html#directory-layout). I went a step further, because my intended architecture is RHEL, and defined a `common_yum` role.
+
+**WARNING:** this `role` reconfigures `yum` the way I want it set up on a host managed by Ansible. `yum` has a single configuration file, `/etc/yum.conf`, and can only use one `[main]` configuration at a time. I considered juggling the existing config and and a templated config from Ansible, but decided that was more work than it's worth. You probably shouldn't use this role (and just install [the necessary packages]({{ github_path(current_tag, '/provisioning/roles/common_yum/main.yml#L16') }})) if your host has applications that depend on regularly refreshed repo information.
+
+TODO: fastestmirror
+
+
+{% endblock %}
