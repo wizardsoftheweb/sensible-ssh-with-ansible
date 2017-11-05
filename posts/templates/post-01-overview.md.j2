@@ -31,6 +31,12 @@ Major  Minor  Build  Revision
 
 You'll most likely need to run PowerShell as an administrator; I can't easily break out elevated commands because, unsurprisingly, Microsoft wanted to do things their own way.
 
+### Compiling the Series Posts
+
+To get in the spirit of Ansible, I'm using a [Python script]({{ github_path(current_tag, 'posts/compile.py') }}) to build the posts from [a collection of Jinja templates]({{ github_path(current_tag, 'posts/templates') }}). It's actually the second iteration of a build script ([the first]({{ github_path('v0.6.0', 'post/compile.py') }}) was totally bespoke). It's consumed a day of dev time, which is awesome because it's pretty neat but also not awesome because I'd like to be further in the series.
+
+I mention this because there's a chance I missed something in the build process on any of the posts. I rigorously check builds locally before drafting them on my blog, where I read the whole thing at least twice and try to con friends into reviewing it before actually posting it. However, there's a great chance I missed something. If I did, let me know and I'll fix it ASAP.
+
 ## Software
 
 ### Main
