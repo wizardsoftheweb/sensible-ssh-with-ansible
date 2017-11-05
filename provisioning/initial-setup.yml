@@ -1,4 +1,10 @@
 ---
+- hosts: setup
+
+  roles:
+    - role: configures_yum
+      when: ansible_pkg_mgr == 'yum'
+
 - hosts: setup-controller
 
   vars_files:
