@@ -52,8 +52,9 @@ def update_repo_link(post_filename, contents):
     return contents
 
 def compile_includes(post_filename, contents):
+    current_tag = os.path.basename(os.path.splitext(post_filename)[0])
     repo_root = '//github.com/wizardsoftheweb/sensible-ssh-with-ansible/tree/'
-    repo_root += os.path.basename(os.path.splitext(post_filename)[0])
+    repo_root += current_tag
     repo_root += '/'
     for found_include in re.finditer(include_pattern, contents):
         original_include = found_include.group()
@@ -68,8 +69,11 @@ def compile_includes(post_filename, contents):
         else:
             new_include += os.path.splitext(relative_path)[1].replace('.', '')
         new_include += os.linesep
-        with file(os.path.join(root_dir, relative_path), 'r') as file_to_include:
-            new_include += file_to_include.read()
+        try:
+            new_include += subprocess.check_output(['git', 'show', current_tag + ':' + relative_path], stderr=open(os.devnull, 'w'))
+        except subprocess.CalledProcessError:
+            with file(os.path.join(root_dir, relative_path), 'r') as file_to_include:
+                new_include += file_to_include.read()
         new_include += '```'
         new_include += os.linesep + os.linesep
         contents = contents.replace(original_include, new_include)
