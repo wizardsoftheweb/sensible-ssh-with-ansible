@@ -28,6 +28,7 @@ If you have suggestions or improvements, I'd love to hear them. I have no idea w
     2. insert TOC via [`markdown_toclify`](https://github.com/rasbt/markdown-toclify)
     3. strip dashes from `markdown_toclify` slugs
 
+I've [submitted a PR](https://github.com/rasbt/markdown-toclify/pull/14) to include the final action in `markdown_toclify`, but it might not get approved.
 
 ## TODOs
 
