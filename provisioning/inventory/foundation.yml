@@ -1,9 +1,12 @@
+---
 foundation:
   hosts:
+    # Simulates default configuration
     trantor:
-    tazenda:
+    # Simulates default configuration without escalation
     terminus:
       ansible_become: no
+    # Simulate default configuration as a service account without escalation
     kalgan:
       ansible_user: kalgan-service
       ansible_become: no
