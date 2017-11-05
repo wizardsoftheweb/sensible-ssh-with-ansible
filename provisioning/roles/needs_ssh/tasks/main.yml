@@ -1,14 +1,4 @@
 ---
-- name: Ensure the role includes the right architecture
-  local_action:
-    module: stat
-    path: "{{ role_dir }}/tasks/{{ ansible_os_family }}.yml"
-  register: architecture
-
-- fail:
-    msg: "Unable to find installation tasks for {{ ansible_os_family }}"
-  when: architecture.stat.exists == false
-
 - name: Assume server unless passed in
   set_fact:
     box_type: "{{ box_type|default('server', true) }}"
@@ -17,5 +7,9 @@
   set_fact:
     packages_to_install: "{{ source_packages[ansible_os_family][box_type]|default(source_packages['default'][box_type], true) }}"
 
-- name: Install the necessaries
-  include_tasks: "{{ role_dir }}/tasks/{{ ansible_os_family }}.yml"
+- name: Install via the generic package manager
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ packages_to_install }}"
+  become: yes

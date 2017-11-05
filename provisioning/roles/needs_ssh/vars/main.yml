@@ -1,6 +1,4 @@
 ---
-role_dir: "{{ playbook_dir }}/roles/needs_ssh"
-
 source_packages:
   default:
     server:

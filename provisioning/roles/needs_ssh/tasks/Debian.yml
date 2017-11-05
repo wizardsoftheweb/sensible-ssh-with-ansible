@@ -1,7 +1,0 @@
----
-- name: Install via apt
-  apt:
-    name: "{{ item }}"
-    state: present
-  with_items: "{{ packages_to_install }}"
-  become: yes
