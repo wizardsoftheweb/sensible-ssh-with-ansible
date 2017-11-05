@@ -55,14 +55,20 @@ for post_filename in glob(path.join(template_dir, 'post-*.j2')):
     output_filename = path.join(build_dir, post_basename.replace('.j2', ''))
     with file(output_filename, 'w+') as built_file:
         built_file.write(sub(r'\n\n```\n\n', '\n```\n\n', pre_toc))
-        markdown_toclify(
-            input_file=output_filename,
-            output_file=output_filename,
-            nolink=True,
-            github=True,
-            no_toc_header=True,
-            placeholder='<!-- markdown_toclify -->',
-            exclude_h=[1]
+        built_file.seek(0)
+        built_file.write(
+            sub(
+                r'\n\n+',
+                '\n\n',
+                markdown_toclify(
+                    input_file=output_filename,
+                    nolink=True,
+                    github=True,
+                    no_toc_header=True,
+                    placeholder='<!-- markdown_toclify -->',
+                    exclude_h=[1]
+                )
+            )
         )
         built_file.seek(0)
         file_contents = built_file.read()
