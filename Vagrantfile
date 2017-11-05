@@ -61,15 +61,21 @@ Vagrant.configure('2') do |config|
 
 # Doesn't work; folders are mounted pre-provisioning
 # See https://seven.centos.org/2017/09/updated-centos-vagrant-images-available-v1708-01/
-    mount_packages = 'nfs-utils nfs-utils-lib'
+# Run in this order to fix:
+# vagrant up
+# vagrant provision
+# vagrant reload --provision
+    # These were vetted on RHEL and Debian; dunno about others
+    mount_packages = ['nfs-utils', 'nfs-utils-lib']
     mount_type = 'nfs'
     if Vagrant::Util::Platform.windows?
-      mount_packages = 'cifs-utils'
+      mount_packages = ['cifs-utils']
       mount_type = 'smb'
     end
 
+    # You might have to replace rpm and yum with your distro's tools
     controller.vm.provision 'shell' do |sh|
-      sh.inline = "yum list installed #{mount_packages} || yum install -y #{mount_packages}"
+      sh.inline = "rpm -qa | egrep -i \'#{mount_packages.join('|')}\' || yum install -y #{mount_packages.join(' ')}"
       sh.privileged = true
     end
 
@@ -84,17 +90,10 @@ Vagrant.configure('2') do |config|
     controller.vm.provision 'ansible_local' do |ansible|
       ansible.playbook = 'initial-setup.yml'
       ansible.install_mode = 'pip'
-      # ansible.limit = controller.vm.hostname
-      # ansible.provisioning_path = '/tmp/provisioning'
-      # ansible.inventory_path = '/tmp/provisioning/inventory'
-      # ansible.config_file = '/tmp/provisioning/ansible.cfg'
+      ansible.limit = controller.vm.hostname
+      ansible.provisioning_path = '/tmp/provisioning'
+      ansible.inventory_path = '/tmp/provisioning/inventory'
     end
     # END WARNING
-
-    # # This one's okay to duplicate
-    # controller.vm.provision 'ansible' do |ansible|
-    #   ansible.playbook = '/tmp/provisioning/main.yml'
-    #   ansible.config_file = '/tmp/provisioning/ansible.cfg'
-    # end
   end
 end

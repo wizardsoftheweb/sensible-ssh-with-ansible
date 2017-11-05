@@ -1,0 +1,16 @@
+{#
+ # See the docs for more info:
+ # https://wiki.centos.org/PackageManagement/Yum/FastestMirror
+ #}
+[main]
+always_print_best_host=0
+enabled=1
+{# A relative path drops it in the relevant dir automatically #}
+hostfilepath=timedhosts.txt
+{#
+ # If you want an absolute path, you can use
+ # {{ cache_dir }}/timedhosts.txt
+ #}
+maxhostfileage=10
+socket_timeout=3
+verbose=0

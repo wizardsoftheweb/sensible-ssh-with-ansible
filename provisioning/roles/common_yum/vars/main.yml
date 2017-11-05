@@ -1,7 +1,0 @@
-yum_cache:
-  filename: ".yum-cache-age"
-  directory: "{{ config_directory }}"
-  stamp: mtime
-  # negative means max age
-  # http://docs.ansible.com/ansible/latest/find_module.html#options
-  age_max: -24h

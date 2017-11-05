@@ -1,0 +1,22 @@
+{#
+ # Check `man yum.conf` for more information
+ # https://linux.die.net/man/5/yum.conf
+ #}
+[main]
+cachedir={{ cache_dir }}
+debuglevel=2
+{#
+ # If you're having trouble with this, verify this:
+ # yum whatprovides redhat-release
+ # matches this:
+ # ansible <hostname> -m setup -a 'filter=ansible_distribution'
+ #}
+distroverpkg={{ ansible_distribution|lower }}-release
+exactarch=1
+gpgcheck=1
+installonly_limit=5
+keepcache=1
+logfile=/var/log/yum.log
+obsoletes=1
+plugins=1
+reposdir=/etc/yum.repos.d

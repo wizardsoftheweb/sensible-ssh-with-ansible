@@ -1,0 +1,42 @@
+---
+- name: Ensure proper yum.conf is in place
+  template:
+    src: etc/yum.conf.j2
+    dest: /etc/yum.conf
+    mode: 'u=rw,go=r'
+    owner: root
+    group: root
+  become: yes
+
+- name: Ensure necessary yum components are installed
+  yum:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  with_items:
+    - epel-release
+    - yum-plugin-fastestmirror
+    - yum-utils
+  become: yes
+
+# Recursing could affect files we didn't mean to touch
+- name: Ensure yum plugins directory exists
+  file:
+    path: "/etc/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 'u=rwx,go=rx'
+  with_items:
+    - yum
+    - yum/pluginconf.d
+  become: yes
+
+- name: Ensure proper fastestmirror.conf is in place
+  template:
+    src: etc/yum/pluginconf.d/fastestmirror.conf.j2
+    dest: /etc/yum/pluginconf.d/fastestmirror.conf
+    mode: 'u=rw,go=r'
+    owner: root
+    group: root
+  become: yes

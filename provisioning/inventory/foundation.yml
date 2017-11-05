@@ -1,6 +1,9 @@
-# foundation:
-#   hosts:
-#     trantor:
-#       ansible_user: bob
-#     terminus:
-#     kalgan:
+foundation:
+  hosts:
+    trantor:
+    tazenda:
+    terminus:
+      ansible_become: no
+    kalgan:
+      ansible_user: kalgan-service
+      ansible_become: no

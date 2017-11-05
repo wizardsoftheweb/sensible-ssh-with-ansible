@@ -1,6 +1,12 @@
 ---
 - hosts: setup
 
+  roles:
+    - role: configures_yum
+      when: ansible_pkg_mgr == 'yum'
+
+- hosts: setup-controller
+
   vars_files:
     - "{{ playbook_dir }}/inventory/group_vars/controller.yml"
     - "{{ playbook_dir }}/vars/initial-setup.yml"

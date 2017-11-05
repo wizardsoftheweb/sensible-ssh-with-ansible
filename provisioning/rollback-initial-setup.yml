@@ -1,5 +1,5 @@
 ---
-- hosts: setup
+- hosts: setup-controller
 
   vars_files:
     - "{{ playbook_dir }}/inventory/group_vars/controller.yml"

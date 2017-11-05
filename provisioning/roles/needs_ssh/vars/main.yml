@@ -1,0 +1,10 @@
+---
+source_packages:
+  default:
+    server:
+      - 'openssh-server'
+    client:
+      - 'openssh-client'
+  RedHat:
+    client:
+      - 'openssh-clients'
