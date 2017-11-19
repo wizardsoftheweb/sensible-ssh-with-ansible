@@ -1,6 +1,6 @@
 ---
 controller:
   hosts:
-    # Here I don't mind using localhost, because it's intended to run locally (wherever that may be)
-    localhost:
+    generic:
+      ansible_host: localhost
       ansible_connection: local
