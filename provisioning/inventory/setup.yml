@@ -4,7 +4,7 @@
 setup-controller:
   hosts:
     # I don't want to refer to localhost, so I rename it...
-    generic:
+    setup-generic:
       # and define ansible_host as the real location
       ansible_host: localhost
       # this lets ansible know it's running locally, which can be important
@@ -12,16 +12,19 @@ setup-controller:
 
 # This group lists all three foundation hosts
 setup-foundation:
-  # No options are set per key because they're currently vanilla Vagrant VMS
+  # No specific options are set per key because they're currently vanilla Vagrant VMs
   # ansible_connection isn't set because ansible isn't running locally for these hosts
   hosts:
-    trantor:
-    terminus:
-    kalgan:
+    setup-trantor:
+      ansible_host: trantor
+    setup-terminus:
+      ansible_host: terminus
+    setup-kalgan:
+      ansible_host: kalgan
 
 # Link the two setup groups to share super variables
 setup:
-  # This key lets us specify existing groups as descendents
+  # This key lets us specify existing groups as descendants
   children:
     setup-controller:
     setup-foundation:
