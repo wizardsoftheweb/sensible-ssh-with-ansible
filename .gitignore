@@ -8,6 +8,7 @@
 .vagrant
 # Personal working files (you might not need these)
 scratch.ts
+**/scratch.py
 README.html
 notes.md
 # Temporary post files; can be unignored later
