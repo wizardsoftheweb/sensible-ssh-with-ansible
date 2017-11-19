@@ -9,6 +9,8 @@
 # Personal working files (you might not need these)
 scratch.ts
 **/scratch.py
+**/scratch.yml
+**/*.retry
 README.html
 notes.md
 # Temporary post files; can be unignored later
