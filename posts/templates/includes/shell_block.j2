@@ -1,0 +1,8 @@
+{% macro shell_block(contents, language='bash') %}
+{% set lines, data_output = build_data_output(contents) %}
+<pre class="command-line language-{{ language }}" data-prompt="{{ 'PS$' if 'powershell' == language else '$' }}"{% if data_output %} data-output="{{ data_output }}"{% endif %}>
+<code class=" language-{{ language }}">
+{{ lines }}
+</code>
+</pre>
+{% endmacro %}
