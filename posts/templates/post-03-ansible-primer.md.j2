@@ -28,7 +28,7 @@ ansible 2.4.1.0
   ...
 ```
 
-Ansible only loads the first file it finds. It won't merge, say, a local directory config and your global `$HOME` config. Ansible starts with [its base configuration](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/config/base.yml) and updates only the values you've specified. If you're not paying attention, this can often bite you. For example, the default inventory, `/etc/ansible/hosts`, probably doesn't contain the hosts you're about to set up. You'll either have to always specify a local inventory at execution via the `-i`nventory flag or add `inventory = /path/to/inventory` to the project's main config file once.
+Ansible only loads the first file it finds. It won't merge, say, a local directory config and your global `$HOME` config. Ansible starts with [its base configuration](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/config/base.yml) and updates only the values you've specified. If you're not paying attention, this can often bite you. For example, the default inventory, `/etc/ansible/hosts`, probably doesn't contain the hosts you're about to set up. You'll either have to specify a local inventory at execution via the `-i`nventory flag always or add `inventory = /path/to/inventory` to the project's main config file once. I prefer the latter option.
 
 ### `ansible-config`
 
