@@ -1,0 +1,191 @@
+{# {% extends 'base.md.j2' %}
+{% block lead_paragraph %}
+This post serves as an introduction to Ansible. However, many of its components will turn up again later, so it's worth a quick skim. The code presented here is overly verbose; if you're already comfortable with Ansible, just ignore the comments as you skim.
+
+WARNING: If you're skimming this on GitHub, this post isn't even in the draft phase yet. Expect everything to change.
+{% endblock %}
+{% block content %}
+## Populating the Status Quo
+
+Before we can secure or automate our environment, we need an environment. As mentioned [TODO], I'm going to mimic the world I work in. Building everything via Ansible is certainly more complicated than just copying existing files and users. However, it provides context for all the moving pieces we'll be working with later (also [I'm lazy](http://threevirtues.com/)).
+
+I typically have the same username across machines (whenever possible) to keep things simple. [Here]({{ github_path(current_tag, 'provisioning/vars/initial-setup.yml') }}), that user is `baseuser`. Whenever you see `baseuser`, that's us. I have `sudo` access on machines I administer and try to avoid it on machines I do not. Ergo `baseuser` has `sudo` access most of the time (except for a few examples I haven't written yet).
+
+I'm going to try to act as naive as possible during the setup by using defaults where possible. To make managing this project easier, [the  passphrase for any generated key]({{ github_path(current_tag, 'provisioning/roles/build_user/tasks/create.yml') }}) is `password`. I'm also going to enable `NOPASSWD:ALL` ([docs](https://www.sudo.ws/man/1.8.15/sudoers.man.html#Tag_Spec)) to simplify output. As one final act of naive rebellion, I stored everything in the clear in a publicly accessible repo.
+
+Having said that, I'd also like to emphasize that you probably shouldn't do any of those things in the real world. This post is about defining the problem, not presenting a solution. That comes later. If you decide you absolutely have to expose yourself on the internet, don't forget to [read the license]({{ github_path(current_tag, 'LICENSE.md') }}).
+
+### Convenience Config
+
+{{ include_file(current_tag, 'provisioning/ansible.cfg') }}
+
+The inventory path is specified in the config to override the default inventory, `/etc/ansible/hosts`. By including it, you can replace this:
+
+```
+$ ansible-playbook -i path/to/inventory site.yml
+```
+
+with this:
+
+```
+$ ansible-playbook site.yml
+```
+
+[The second option, `retry_files_save_path`](http://docs.ansible.com/ansible/latest/intro_configuration.html#retry-files-save-path), moves Ansible `.retry` files to a common directory which is ignored by VCS. These files (which are [woefully underdocumented](https://github.com/ansible/ansible/search?utf8=%E2%9C%93&q=retry_files_enabled+&type=)) are created by Ansible when something goes wrong, and can be used to limit execution on that host. They're a great feature but a nightmare to manage when created unfettered in the wild.
+
+### Host Stages
+
+Ansible will touch the demo network in two distinct stages: raw Vagrant boxes and provisioned examples. Because the userspace will change between the two stages, the easiest way to handle this in the inventory is to create inventory files for each stage. Both stages will need to define the `controller` node, where Ansible is running, and all the remotes, where Ansible will `ssh` in.
+
+For reference, here's the entire directory structure. Each item will be explained below.
+
+{{ insert_bash([['git', 'ls-anytree', current_tag + ':provisioning/inventory', '--name-only', '--dirsfirst']]) }}
+
+### Setup
+
+For the initial provisioning step, we'll be using the `vagrant` user (which is, by default, the user used to interact with Vagrant boxes). `vagrant` will need to escalate privileges to create users and install files, so we'll enable that via `ansible_become` and specify its options.
+
+```yaml
+---
+ansible_user: vagrant
+ansible_become: yes
+# This is the default behavior
+# I explicitly set this for clarity; it's not necessary
+ansible_become_user: root
+# Ditto
+ansible_become_method: sudo
+```
+
+Ansible will be running locally on the `controller`, which changes some of its normal behavior. We could `ssh` from `controller` to `controller`, but it's more efficient to just set `ansible_connection: local` ([docs](http://docs.ansible.com/ansible/latest/intro_inventory.html#non-ssh-connection-types)) on the box. I'm also going to specify a different hostname, as `localhost` is ambiguous at this stage.
+
+```yaml
+---
+setup-controller:
+  hosts:
+    # This isn't an actual hostname on the network...
+    setup-generic:
+      # because it's mapped to one
+      ansible_host: localhost
+      ansible_connection: local
+```
+
+The remotes also use remapped hostnames. This allows us to specify different options for the final host versus its setup precursor.
+
+```yaml
+---
+setup-foundation:
+  hosts:
+    setup-trantor:
+      ansible_host: trantor
+    setup-terminus:
+      ansible_host: terminus
+    setup-kalgan:
+      ansible_host: kalgan
+```
+
+To keep things tidy, I put the hosts in `setup.yml` and offload variables to the `group_vars` magic directory. Ansible attaches any variables in `<inventory path>/group_vars/<name of group>.yml` to the group, which makes network updates easier to manage.
+
+{{ insert_bash([['git', 'ls-anytree', current_tag, 'provisioning/inventory/setup.yml', 'provisioning/inventory/group_vars/setup.yml', '--name-only', '--dirsfirst']]) }}
+
+{{ include_file(current_tag, 'provisioning/inventory/group_vars/setup.yml') }}
+
+{{ include_file(current_tag, 'provisioning/inventory/setup.yml') }}
+
+### Provisioned
+
+#### Controller
+
+The provisioned `controller` inventory is very similar to its `setup-controller` precursor. The only difference is the removal of `setup-` from its remapped hostname.
+
+I plan use common directories to communicate between roles on `controller`. Although their primary consumer is `controller`, I still need access to them during the `initial-setup` playbook. I could duplicate the variables, requiring updates in multiple locations, or I could move the variable to a file that can be included.
+
+{{ insert_bash([['git', 'ls-anytree', current_tag, 'provisioning/inventory/controller.yml', 'provisioning/inventory/group_vars/controller.yml', '--name-only', '--dirsfirst']]) }}
+
+{{ include_file(current_tag, 'provisioning/inventory/group_vars/controller.yml') }}
+
+{{ include_file(current_tag, 'provisioning/inventory/controller.yml') }}
+
+#### Remotes
+
+I'm going to simulate different access configurations with each remote node. This includes (at the moment):
+
+* `ssh baseuser@remote` with `sudo`
+* `ssh baseuser@remote` without `sudo`
+* `ssh serviceaccount@remote` without `sudo` (technically a duplicate of the previous; included because it's pretty common in my world)
+
+{{ include_file(current_tag, 'provisioning/inventory/foundation.yml') }}
+
+#### All
+
+To reiterate, `all` is a magic group that includes all the hosts in an inventory. Based on [our common assumptions](#populatingthestatusquo), Ansible should attempt to use `baseuser` by default. I'm going to respecify the `ansible_become` options (technically they were respecified in `setup`, as `setup` inherits `vars` from `all`) for clarity, and I'd also like to specify a `.config` directory to store output, settings, and so on.
+
+{{ include_file(current_tag, 'provisioning/inventory/group_vars/all.yml') }}
+
+## Ad-Hoc Commands
+[The `debug` module](http://docs.ansible.com/ansible/latest/debug_module.html) provides a fast way to check variables. For example, let's investigate what the `all` group actually contains:
+
+{% raw %}
+```
+$ ansible all -m debug -a 'msg="Host is {{ ansible_host }} as {{ inventory_hostname }} defined in {{ inventory_file }}"'
+kalgan | SUCCESS => {
+    "msg": "Host is kalgan as kalgan defined in /tmp/provisioning/inventory/foundation.yml"
+}
+trantor | SUCCESS => {
+    "msg": "Host is trantor as trantor defined in /tmp/provisioning/inventory/foundation.yml"
+}
+terminus | SUCCESS => {
+    "msg": "Host is terminus as terminus defined in /tmp/provisioning/inventory/foundation.yml"
+}
+setup-generic | SUCCESS => {
+    "msg": "Host is localhost as setup-generic defined in /tmp/provisioning/inventory/setup.yml"
+}
+setup-kalgan | SUCCESS => {
+    "msg": "Host is kalgan as setup-kalgan defined in /tmp/provisioning/inventory/setup.yml"
+}
+setup-trantor | SUCCESS => {
+    "msg": "Host is trantor as setup-trantor defined in /tmp/provisioning/inventory/setup.yml"
+}
+setup-terminus | SUCCESS => {
+    "msg": "Host is terminus as setup-terminus defined in /tmp/provisioning/inventory/setup.yml"
+}
+generic | SUCCESS => {
+    "msg": "Host is localhost as generic defined in /tmp/provisioning/inventory/controller.yml"
+}
+```
+{% endraw %}
+
+## Roles
+
+Roles provide a way to reuse Ansible code. Chances are, if you're doing it once, you're going to do it again. You'll probably do it again elsewhere. From a code perspective, roles add a few nice features. They're isolated, which means they're way more maintainable. They also provide [a relative directory structure](https://docs.ansible.com/ansible/2.4/playbooks_reuse_roles.html#id5), so you can scope effectively.
+
+For this first post, I've created [a few simple roles]({{ github_path(current_tag, 'provisioning/roles') }}). Right now, they build fairly insecure configurations, so there's a great chance they'll change as the series progresses. I'll start with the roles that ensure a universal base environment, and finish with the roles that create unique configuration per host.
+
+For reference, here's the current `roles` top-level structure:
+
+{{ insert_bash([['tree', 'provisioning/roles', '--charset=ascii', '-L', '1']])}}
+
+### Role Anatomy
+
+Roles are found in the `roles_path`, which is simply `roles` here. Each subdirectory of `roles` is assumed to be a `role`. Each `role` can be defined in various ways. The simplest method, taken from [the best practices](https://docs.ansible.com/ansible/2.4/playbooks_reuse_roles.html#id5), is to create a subdirectory for any defined elements containing at least a `main.yml`. Any other files can be referenced relatively, but are not automatically used. If this doesn't make sense right now, it should clear up with some examples.
+
+### `needs_ssh`
+
+This role serves more as a feature demo than anything else. I was curious if I could create a role capable of installing OpenSSH on Debian and RHEL.
+
+It requires a few variables, defined in `vars/main.yml`:
+
+When applied, the `role` begins with `main.yml`. [The global `ansible_os_family`](https://groups.google.com/d/msg/ansible-project/OZPu-b17n_w/aljBZKx8AgAJ) comes from a list of architectures than can mostly describe OS groups.
+
+The `Debian` task is very straightforward:
+
+The `RedHat` tasks are slightly more involved:
+
+### `common_yum`
+
+The best practices [define a `common` role](http://docs.ansible.com/ansible/latest/playbooks_best_practices.html#directory-layout). I went a step further, because my intended architecture is RHEL, and defined a `common_yum` role.
+
+**WARNING:** this `role` reconfigures `yum` the way I want it set up on a host managed by Ansible. `yum` has a single configuration file, `/etc/yum.conf`, and can only use one `[main]` configuration at a time. I considered juggling the existing config and and a templated config from Ansible, but decided that was more work than it's worth. You probably shouldn't use this role (and just install [the necessary packages]({{ github_path(current_tag, 'provisioning/roles/common_yum/main.yml#L16') }})) if your host has applications that depend on regularly refreshed repo information.
+
+TODO: fastestmirror
+{% endblock %}
+ #}

@@ -1,6 +1,6 @@
 {% extends 'base.md.j2' %}
 {% block lead_paragraph %}
-This post serves as an Ansible primer. It assumes shell knowledge but nothing else. The post looks at each component of an Ansible playbook with plenty of examples. It doesn't explain any of the Ansible modules in detail, but does ocassionally investigate how Ansible core works. If you're already familiar with Ansible, you can probably skip this. I removed anything involving the overarching project to simplify things.
+This post serves as an Ansible primer. It assumes shell knowledge but nothing else. The post looks at each component of an Ansible playbook with plenty of examples. It doesn't explain any of the Ansible modules in detail, but does occasionally investigate how Ansible core works. If you're already familiar with Ansible, you can probably skip this. I removed anything involving the overarching project to simplify things.
 
 WARNING: If you're skimming this on GitHub, this just entered the draft stage. Expect everything to change.
 {% endblock %}
@@ -77,7 +77,7 @@ all:
     group_scoped_variable: 'can be overriden per host'
 ```
 
-Each of the `hosts` may redefine [connection behavior](http://docs.ansible.com/ansible/latest/intro_inventory.html#list-of-behavioral-inventory-parameters) and can also include host `vars` (not related to Ansible):
+Each of the `hosts` may redefine [connection behavior](http://docs.ansible.com/ansible/latest/intro_inventory.html#list-of-behavioral-inventory-parameters) and can also define host-specific variables (not related to Ansible):
 
 ```yaml
 ---
@@ -85,11 +85,10 @@ all:
   hosts:
     specific_host:
       ansible_user: cool_user
-      vars:
-        host_scoped_variable: 'not accessible to its group'
+      host_scoped_variable: 'not accessible to its group'
 ```
 
-To make managing all of this information easier, you can split out group and host `vars`. Ansible searches for `group_vars/groupname.yml` and `host_vars/hostname.yml` in the `inventory` path. If found, Ansible merges those `vars` in with the any vars in the `inventory_file`.
+To make managing all of this information easier, you can split out group and host `vars`. Ansible searches for `group_vars/groupname.yml` and `host_vars/hostname.yml` in the `inventory` path. If found, Ansible merges those `vars` in with the variables define in the `inventory_file`.
 
 ```
 $ tree example-inventory
@@ -142,7 +141,7 @@ host_vars_final_say: 'host_vars/specific_hostname.yml'
 
 ## Ad-Hoc Commands
 
-Ansible exposes its API for quick access via [ad-hoc commands](http://docs.ansible.com/ansible/latest/intro_adhoc.html). Ad-hoc commands aren't run as part of a playbook, so they're very useful for debugging or one-off calls. Similar to [TODO tasks inside a playbook], you must specify the host(s), the module, and its arguments.
+Ansible exposes its API for quick access via [ad-hoc commands](http://docs.ansible.com/ansible/latest/intro_adhoc.html). Ad-hoc commands aren't run as part of a playbook, so they're very useful for debugging or one-off calls. Similar to tasks inside a playbook (explained [later](#playbooks)), you must specify the host(s), the module, and its arguments.
 
 ```
 $ ansible <host or group> -m <module name> -a '<arguments to pass to the module>'
@@ -159,15 +158,18 @@ localhost | SUCCESS => {
 }
 ```
 
-[The `debug` module](http://docs.ansible.com/ansible/latest/debug_module.html) provides a fast way to check variables. For example, let's investigate what the `all` group actually contains:
+[The `debug` module](http://docs.ansible.com/ansible/latest/debug_module.html) provides a fast way to check variables. For example, let's check a few Ansible variables against `localhost`:
 
 {% raw %}
 ```
-$ ansible all -m debug -a 'msg="Host is {{ ansible_host }} as {{ inventory_hostname }} defined {{ 'locally' if inventory_file is not defined else ('in ' + inventory_file) }}"'
+$ ansible --connection=local localhost -m debug -a 'msg="Host is {{ ansible_host }} as {{ inventory_hostname }} defined {{ 'locally' if inventory_file is not defined else ('in ' + inventory_file) }}"'
+localhost | SUCCESS => {
+    "msg": "Host is 127.0.0.1 as localhost defined locally"
+}
 ```
 {% endraw %}
 
-There are no ad-hoc commands in the actual codebase, as the calls are all in playbooks. However, I might use an ad-hoc command to illustrate a task, and I highly recommend running tasks here as commands to understand how they work.
+There are no ad-hoc commands in [the actual codebase]({{  github_path(current_tag, 'provisioning') }}), as the calls are all in playbooks. However, I might occasionally use an ad-hoc command to illustrate a task, and I highly recommend running tasks here as commands to understand how they work.
 
 ## Playbooks
 
@@ -176,7 +178,6 @@ Ansible proper groups sets of actions on hosts in [YAML files called playbooks](
 {% raw %}
 ```yaml
 ---
-# I don't feel like defining a full inventory, so I replaced all
 - hosts: localhost
   connection: local
 
@@ -193,7 +194,6 @@ When run, it looks something like this:
 
 ```
 $ ansible-playbook scratch.yml
-
 PLAY [localhost] **********************************************************
 
 TASK [Gathering Facts] ****************************************************
@@ -210,6 +210,10 @@ ok: [localhost] => {
 PLAY RECAP ****************************************************************
 localhost                  : ok=3    changed=0    unreachable=0    failed=0
 ```
+
+### Jinja
+
+TODO
 
 ### Play Meta
 
@@ -241,7 +245,7 @@ Plays can (re)define a variety of Ansible options, which come from its superclas
 ...
 ```
 
-(Full disclosure: I couldn't actually find a full list of play options [in the docs](http://docs.ansible.com/ansible/latest/playbooks.html) when I started this project. I did find [host options](http://docs.ansible.com/ansible/latest/intro_inventory.html#list-of-behavioral-inventory-parameters), so I just used those. I just now, while writing this post, discovered all the cool things available. I suppose I should have gone to the source code sooner.)
+(Full disclosure: I couldn't actually find a full list of play options [in the docs](http://docs.ansible.com/ansible/latest/playbooks.html) when I started this project. I did find [host options](http://docs.ansible.com/ansible/latest/intro_inventory.html#list-of-behavioral-inventory-parameters), so I just used those. I just now, while writing this post, discovered all the cool things available by delving in the source code. I suppose I should have done that sooner.)
 
 Like hosts, plays can define `vars` or [include external `vars`](http://docs.ansible.com/ansible/latest/playbooks_variables.html#variable-file-separation). As usual, these will override host values.
 
@@ -359,8 +363,8 @@ Tasks can be run conditionally via `when`. There are plenty of good reasons for 
     - name: Badger Windows users
       debug:
         msg: You should consider using a more pleasant, less proprietary operating system.
-      # The regex_search filter
-      when: (ansible_distribution | regex_search('([mM]icrosoft|[wW]indows)')) or (ansible_bios_version | regex_search('([hH]yper-[vV])'))
+      # The regex_search filter returns matched contents if found and None otherwise
+      when: (ansible_distribution|regex_search('([mM]icrosoft|[wW]indows)')) or (ansible_bios_version|regex_search('([hH]yper-[vV])'))
 
     - name: Check cache age
       stat:
