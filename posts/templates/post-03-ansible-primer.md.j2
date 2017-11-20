@@ -508,7 +508,7 @@ localhost                  : ok=2    changed=0    unreachable=0    failed=0
       when: some_service_config|changed
 ...
 ```
-This play templates the config for `some-service`, and, if the file changed, restarts `some-service`. Ansible will always attempt to run the second task, as you can see below:
+This play templates the config for `some-service`, and, if the file changed, restarts `some-service`. Ansible will always attempt to run the second task, skipping it when nothing changed, as you can see below:
 
 ```
 $ ansible-playbook scratch.yml
