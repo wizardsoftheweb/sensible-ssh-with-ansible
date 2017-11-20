@@ -1,0 +1,957 @@
+{% extends 'base.md.j2' %}
+{% block lead_paragraph %}
+This post serves as an Ansible primer. It assumes shell knowledge but nothing else. The post looks at each component of an Ansible playbook with plenty of examples. It doesn't explain any of the Ansible modules in detail, but does ocassionally investigate how Ansible core works. If you're already familiar with Ansible, you can probably skip this. I removed anything involving the overarching project to simplify things.
+
+WARNING: If you're skimming this on GitHub, this just entered the draft stage. Expect everything to change.
+{% endblock %}
+{% block content %}
+
+## Ansible
+
+Ansible is great. Using basic markup, you can script most of the things you can think of doing via a good command line (so not PowerShell). It even got me to begrudgingly learn Python.
+
+TODO: explain
+
+## Configuration
+
+If you're a masochist and enjoy manually specifying every option and every flag flag on every Ansible command directly, skip this section. If that doesn't sound fun, you can instead use a configuration file to [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) your scripting.
+
+[Out of the box](http://docs.ansible.com/ansible/latest/intro_configuration.html), Ansible loads its (possibly empty) global configuration file, `/etc/ansible/ansible.cfg`. If you're working in a shared environment, or previously set up Ansible, Ansible might load an environment or userspace config file instead. Luckily, Ansible conveniently provides its discovered config with the `--version` flag:
+
+```
+$ ansible --version
+ansible 2.4.1.0
+  config file = None
+  ...
+$ touch ~/.ansible.cfg
+$ ansible --version
+ansible 2.4.1.0
+  config file = /home/user/.ansible.cfg
+  ...
+```
+
+Ansible only loads the first file it finds. It won't merge, say, a local directory config and your global `$HOME` config. Ansible starts with [its base configuration](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/config/base.yml) and updates only the values you've specified.
+
+### `ansible-config`
+
+If you're using Ansible `>=2.4`, you can quickly check any changes via `ansible-config`:
+
+```
+$ ansible-config dump --only-changed
+```
+
+You can also view the entire configuration, which is insanely useful for debugging.
+
+## Inventory
+
+[Ansible's Inventory](http://docs.ansible.com/ansible/latest/intro_inventory.html) provides all the information necessary to manage the desired remotes. You'll need to add things like addresses and usernames, so be careful with its contents. I personally wouldn't store that information, even encrypted, in a public repo, but YMMV.
+
+(Quick aside: You can also use [dynamic inventories](http://docs.ansible.com/ansible/latest/intro_dynamic_inventory.html), generated from local code or API returns. I really want to try this, and might hit it later.)
+
+While inventories can be one of many supported filetypes, I'll be using YAML files. I find it easier to keep track of all the Ansible configuration when I don't have to swap between syntaxes (as similar as they are).
+
+The first component of an inventory entry ([in YAML, at least](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/plugins/inventory/yaml.py#L97)) is the owning group. `all` is a magic group that can be used when you don't want to explicitly name the group of hosts; even if you don't use it, `all` will get all the hosts in the inventory.
+
+```yaml
+---
+my_first_group:
+  # ...
+```
+
+Below the group is its defining characteristics such as its child `hosts`, any `children` groups, and group-scope `vars`.
+
+```yaml
+---
+all:
+  hosts:
+    specific_host:
+      # ...
+    other_host:
+      # ...
+  children:
+    child_group:
+      hosts:
+        turtles_all_the_way_down:
+          # ...
+  vars:
+    group_scoped_variable: 'can be overriden per host'
+```
+
+Each of the `hosts` may redefine [connection behavior](http://docs.ansible.com/ansible/latest/intro_inventory.html#list-of-behavioral-inventory-parameters) and can also include host `vars` (not related to Ansible):
+
+```yaml
+---
+all:
+  hosts:
+    specific_host:
+      ansible_user: cool_user
+      vars:
+        host_scoped_variable: 'not accessible to its group'
+```
+
+To make managing all of this information easier, you can split out group and host `vars`. Ansible searches for `group_vars/groupname.yml` and `host_vars/hostname.yml` in the `inventory` path. If found, Ansible merges those `vars` in with the any vars in the `inventory_file`.
+
+```
+$ tree example-inventory
+example_inventory
+├── group_vars
+│   ├── all.yml
+│   └── named_group.yml
+├── host_vars
+│   └── specific_hostname.yml
+├── named_group.yml
+└── ungrouped.yml
+
+2 directories, 5 files
+```
+
+[The precedence](http://docs.ansible.com/ansible/latest/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable) might be surprising: facts from an inventory file are replaced by facts from `(group|host)_vars`. Using the above example, these values represent the final value of facts defined in multiple locations (assuming they're only set in the inventory):
+
+```yaml
+---
+# Set in:
+# - under named_group vars in named_group.yml
+group_inventory_final_say: 'named_group.yml'
+
+# Set in:
+# - under named_group vars in named_group.yml
+# - group_vars/all.yml
+all_group_vars_final_say: 'group_vars/all.yml'
+
+# Set in:
+# - under named_group vars in named_group.yml
+# - group_vars/all.yml
+# - group_vars/named_group.yml
+group_vars_final_say: 'group_vars/named_group.yml'
+
+# Set in:
+# - under named_group vars in named_group.yml
+# - group_vars/all.yml
+# - group_vars/named_group.yml
+# - under specific_hostname (directly) in named_group.yml
+host_inventory_final_say: 'named_group.yml'
+
+# Set in:
+# - under named_group vars in named_group.yml
+# - group_vars/all.yml
+# - group_vars/named_group.yml
+# - under specific_hostname (directly) in named_group.yml
+# - host_vars/specific_hostname.yml
+host_vars_final_say: 'host_vars/specific_hostname.yml'
+```
+
+## Ad-Hoc Commands
+
+Ansible exposes its API for quick access via [ad-hoc commands](http://docs.ansible.com/ansible/latest/intro_adhoc.html). Ad-hoc commands aren't run as part of a playbook, so they're very useful for debugging or one-off calls. Similar to [TODO tasks inside a playbook], you must specify the host(s), the module, and its arguments.
+
+```
+$ ansible <host or group> -m <module name> -a '<arguments to pass to the module>'
+```
+
+A common "hello world" command uses [the `ping` module](http://docs.ansible.com/ansible/latest/ping_module.html):
+
+```
+$ ansible --connection=local localhost -m ping
+localhost | SUCCESS => {
+    "changed": false,
+    "failed": false,
+    "ping": "pong"
+}
+```
+
+[The `debug` module](http://docs.ansible.com/ansible/latest/debug_module.html) provides a fast way to check variables. For example, let's investigate what the `all` group actually contains:
+
+{% raw %}
+```
+$ ansible all -m debug -a 'msg="Host is {{ ansible_host }} as {{ inventory_hostname }} defined {{ 'locally' if inventory_file is not defined else ('in ' + inventory_file) }}"'
+```
+{% endraw %}
+
+There are no ad-hoc commands in the actual codebase, as the calls are all in playbooks. However, I might use an ad-hoc command to illustrate a task, and I highly recommend running tasks here as commands to understand how they work.
+
+## Playbooks
+
+Ansible proper groups sets of actions on hosts in [YAML files called playbooks](http://docs.ansible.com/ansible/latest/playbooks_intro.html). Playbooks are lists of plays, which contain targets, variables, and actions to execute. [The previous section](#adhoccommands) can be rewritten as follows:
+
+{% raw %}
+```yaml
+---
+# I don't feel like defining a full inventory, so I replaced all
+- hosts: localhost
+  connection: local
+
+  tasks:
+    - name: Ping the host
+      ping:
+    - name: Print hostname metadata
+      debug:
+        msg: "Host is {{ ansible_host }} as {{ inventory_hostname }} defined {{ 'locally' if inventory_file is not defined else ('in ' + inventory_file) }}"
+```
+{% endraw %}
+
+When run, it looks something like this:
+
+```
+$ ansible-playbook scratch.yml
+
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Ping localhost] *****************************************************
+ok: [localhost]
+
+TASK [Print hostname metadata] ********************************************
+ok: [localhost] => {
+    "msg": "Host is 127.0.0.1 as localhost defined locally"
+}
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0
+```
+
+### Play Meta
+
+The first (logically, at least) components of a play are its metadata. A play first lists its targets, defines local variables (including overriding inherited values), and [gathers pertinent host facts](http://docs.ansible.com/ansible/latest/setup_module.html).
+
+Plays begin with a `hosts` variable, which can be a specific host, a group, or [a group pattern](http://docs.ansible.com/ansible/latest/intro_patterns.html). As of `2.4`, you can additionally [specify the `order`](http://docs.ansible.com/ansible/latest/playbooks_intro.html#hosts-and-users) a group will follow. [By default](http://docs.ansible.com/ansible/latest/playbooks_variables.html#information-discovered-from-systems-facts), each play will attempt to gather information about all the targeted hosts. If you don't want Ansible to do this, e.g. the play doesn't need any host information, you can disable it with `gather_facts: no`.
+
+```yaml
+---
+- hosts: specific-host
+  ...
+- hosts: some-group
+  ...
+- hosts: all:!except-for-this-host
+  ...
+- hosts: all
+  gather_facts: no
+  ...
+```
+
+Plays can (re)define a variety of Ansible options, which come from its superclasses `Base` ([source](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/base.py#L150)), `Taggable`([source](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/taggable.py#L30)), and `Become` ([source](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/become.py#L33)). Plays inherit the options defined in the inventory. Anything specified in a play will override the inventory value, e.g. a play's `remote_user` will replace a host's `ansible_user`.
+
+```yaml
+...
+  tags:
+    - 'is_tagged'
+  remote_user: differentuser
+  connection: docker
+...
+```
+
+(Full disclosure: I couldn't actually find a full list of play options [in the docs](http://docs.ansible.com/ansible/latest/playbooks.html) when I started this project. I did find [host options](http://docs.ansible.com/ansible/latest/intro_inventory.html#list-of-behavioral-inventory-parameters), so I just used those. I just now, while writing this post, discovered all the cool things available. I suppose I should have gone to the source code sooner.)
+
+Like hosts, plays can define `vars` or [include external `vars`](http://docs.ansible.com/ansible/latest/playbooks_variables.html#variable-file-separation). As usual, these will override host values.
+
+```yaml
+...
+  vars:
+    play_scoped_value: 'accessible to its child elements'
+    host_scoped_value: 'replaces the host value'
+  var_files:
+    - /path/to/a/vars/file.yml
+...
+```
+
+### Tasks
+
+Plays execute a collection of actions, called `tasks`, against their `hosts`. For convenience, Ansible provides three `tasks` blocks, `pre_tasks`, `tasks`, and `post_tasks`, executed [in that order](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/play.py#L271). `tasks` are [a list of module calls](http://docs.ansible.com/ansible/latest/playbooks_intro.html#tasks-list). You can get a list of installed modules via `ansible-doc -l`, browse its documentation via `ansible-doc <module name>`, and test its syntax via [ad-hoc usage](#adhoccommands). The list of modules [online in the docs](http://docs.ansible.com/ansible/latest/list_of_all_modules.html) may or may not be current, and won't include any extensions you've installed locally.
+
+Task attributes are defined [locally](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/task.py#L69) and in its superclasses `Base` ([source](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/base.py#L150)), `Conditional` ([source](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/conditional.py#L45)), `Taggable`([source](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/taggable.py#L30)), and `Become` ([source](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/become.py#L33)). The simplest task form is just a module call:
+
+```yaml
+...
+  tasks:
+    - debug:
+        msg: 'barebones'
+...
+```
+
+In practice, it's usually a good idea to at least provide a `name` for logging:
+
+```yaml
+...
+  tasks:
+    - name: Log a simple message
+      debug:
+        msg: 'barebones with name'
+...
+```
+
+```
+$ ansible-playbook scratch.yml
+PLAY **********************************************************************
+
+TASK [setup] **************************************************************
+ok: [localhost]
+
+TASK [debug] **************************************************************
+ok: [localhost] => {
+    "msg": "barebones"
+}
+
+TASK [Log a simple message] ***********************************************
+ok: [localhost] => {
+    "msg": "barebones with name"
+}
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0
+```
+
+It's often useful to pass information from one task to another. Each module returns the result (if any) of its action (check its format via `ansible-doc` or the online docs) as well as [common values](http://docs.ansible.com/ansible/latest/common_return_values.html). Usually, you're getting [the result of `AnsibleModule.run_command`](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/module_utils/basic.py#L2559) after the module processes its results. To access this return elsewhere, include `register: name_to_register_as`, which [creates a new fact](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/plugins/strategy/__init__.py#L368) scoped to the play, i.e. accessible to tasks within the play but not elsewhere.
+
+(Quick aside: The scope works because, as the `variable_manager` is passed around, it is [serialized via `pickle`](https://docs.python.org/2/library/pickle.html) and, [when deserialized](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/vars/manager.py#L144), the nonpersistent cache is initialized to an empty `dict`. If that explanation is wrong, I apologize; I don't fully grok the process and am making a few logical jumps based off the code I was able to figure out.)
+
+```yaml
+...
+  tasks:
+    - name: Illustrate registering a task's output
+      stat:
+        path: /tmp/provisioning
+      register: demo_register
+
+    # This puts the item in the logs
+    # Alternatively, you could just run the playbook verbosely
+    - name: Output previous result
+      debug:
+        var: demo_register
+...
+```
+
+```
+$ ansible-playbook scratch.yml
+PLAY **********************************************************************
+
+TASK [setup] **************************************************************
+ok: [localhost]
+
+TASK [Illustrate registering a task's output] *****************************
+ok: [localhost]
+
+TASK [Output previous result] *********************************************
+ok: [localhost] => {
+    "demo_register": {
+        "changed": false,
+        "stat": {
+            "exists": false
+        }
+    }
+}
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0
+```
+
+Tasks can be run conditionally via `when`. There are plenty of good reasons for conditional tasks, like performing OS-specific actions, running state-dependent processes, or including/excluding items based on local facts. Tasks whose execution is dependent on the status of other tasks are better handled (pun intended) via [Handlers](#handlers).
+
+{% raw %}
+```yaml
+...
+  vars:
+    max_cache_age: "{{ 60 * 60 * 24 * 7 }}"
+    cachefile_path: /tmp/cachefile
+    true_in_ancestor: false
+
+  tasks:
+    - name: Badger Windows users
+      debug:
+        msg: You should consider using a more pleasant, less proprietary operating system.
+      # The regex_search filter
+      when: (ansible_distribution | regex_search('([mM]icrosoft|[wW]indows)')) or (ansible_bios_version | regex_search('([hH]yper-[vV])'))
+
+    - name: Check cache age
+      stat:
+        path: "{{ cachefile_path }}"
+      register: cache_age
+
+    - name: Nuke stale cache
+      copy:
+        content: ''
+        dest: "{{ cachefile_path }}"
+        force: yes
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 'ugo=rw'
+      when: cache_age.stat.mtime < ansible_date_time.epoch - max_cache_age
+
+    - name: Run when local fact is truthy
+      expect:
+        command: passwd AzureDiamond
+        responses:
+          (?i)password: 'hunter2'
+      when: true_in_ancestor
+...
+```
+{% endraw %}
+
+```
+$ ansible-playbook scratch.yml
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Badger Windows users] ***********************************************
+skipping: [localhost]
+
+TASK [Check cache age] ****************************************************
+ok: [localhost]
+
+TASK [Nuke stale cache] ***************************************************
+skipping: [localhost]
+
+TASK [Run when local fact is truthy] **************************************
+skipping: [localhost]
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0
+```
+
+Tasks can also be [looped via `with_items`](http://docs.ansible.com/ansible/latest/playbooks_loops.html). This makes duplicating tasks much easier, and also allow each task to execute on a single item only. The task iterates of the contents of `with_items`, (coerced to) a list, using `item` as a placeholder. ([The loop docs](http://docs.ansible.com/ansible/latest/playbooks_loops.html) cover other very useful possibilities, like `with_filetree` and renaming `loop_var`; RTFM) For example, the [suggested way to install packages](http://docs.ansible.com/ansible/latest/playbooks_loops.html#standard-loops) looks like this:
+
+{% raw %}
+```yaml
+...
+  tasks:
+    - name: Ensure dependencies are installed
+      package:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - git
+        - bash
+      become: yes
+...
+```
+{% endraw %}
+
+```
+$ ansible-playbook provisioning/scratch.yml --ask-become-pass
+SUDO password:
+
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Ensure dependencies are installed] **********************************
+ok: [localhost] => (item=git)
+ok: [localhost] => (item=bash)
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0
+```
+
+### Handlers
+
+[Handlers](http://docs.ansible.com/ansible/latest/playbooks_intro.html#handlers-running-operations-on-change) are a specific subclass of tasks whose purpose is to execute task-state-dependent tasks. That's a lot to unpack, so let's look at the most common example:
+
+```yaml
+...
+  tasks:
+    - name: Ensure templated config is in place
+      template:
+        src: etc/some/service.conf.j2
+        dest: /etc/some/service.conf
+      register: some_service_config
+
+    - name: Reload some-service on config change
+      service:
+        name: some-service
+        state: restarted
+      when: some_service_config|changed
+...
+```
+This play templates the config for `some-service`, and, if the file changed, restarts `some-service`. Ansible will always attempt to run the second task, as you can see below:
+
+```
+$ ansible-playbook scratch.yml
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Ensure templated config is in place] ********************************
+ok: [localhost]
+
+TASK [Reload some-service on config change] *******************************
+ok: [localhost]
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=1    unreachable=0    failed=0
+
+$ ansible-playbook scratch.yml
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Ensure templated config is in place] ********************************
+ok: [localhost]
+
+TASK [Reload some-service on config change] *******************************
+skipping: [localhost]
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0
+```
+
+Handlers provide a convenience wrapper for that logic. Rather than `register`ing its output, a task can `notify` a handler. Handlers are defined in the `handlers` block of a play. Since `handlers` aren't executed in the linear manner `tasks` are run, you can quickly reuse the same handler across an entire `tasks` block. By default, `handlers` are queued at the end of each `tasks` without duplication. You can immediately flush the `handlers` queue by including a `meta: flush_handlers` task to override this behavior (do note the queue will still be flushed at the end of the `tasks` block). Like `tasks`, `handlers` are executed linearly in [the order they are defined](http://docs.ansible.com/ansible/latest/playbooks_intro.html#handlers-running-operations-on-change). This provides some structure for handler dependencies and makes notifying multiple handlers easier; after you declare the `handlers` in the order they must be run, you can `notify` them in any order.
+
+Refactoring the leading example gives something like this:
+
+```yaml
+...
+  tasks:
+    - name: Ensure templated config is in place
+      template:
+        src: etc/some/service.conf.j2
+        dest: /etc/some/service.conf
+      notify: restart some-service
+
+  handlers:
+    - name: restart some-service
+      service:
+        name: some-service
+        state: restarted
+...
+```
+
+```
+$ ansible-playbook scratch.yml
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Ensure templated config is in place] ********************************
+ok: [localhost]
+
+RUNNING HANDLER [restart some-service] ************************************
+ok: [localhost]
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=1    unreachable=0    failed=0
+
+$ ansible-playbook scratch.yml
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Ensure templated config is in place] ********************************
+ok: [localhost]
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0
+```
+
+It's also possible to trigger multiple `handlers` with a single `notify`. Include `listen: 'some string'` in the handler body to add additional `notify` topics. `listen` is [defined as a `list`](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/handler.py#L28), so you can add multiple triggers if desired.
+
+```yaml
+...
+  tasks:
+    - name: Trigger immediate handler
+      command: echo 'By default, command|changed is always true'
+      notify: immediate handler
+
+    - name: Immediately flush handlers queue
+      meta: flush_handlers
+
+    - name: Trigger named handler
+      command: /bin/true
+      notify: named handler
+
+    - name: Trigger listen topic
+      command: /bin/true
+      notify: 'listen topic'
+
+  handlers:
+    - name: unnamed handler
+      debug:
+        msg: 'unnamed handler executed'
+      listen:
+        - 'listen topic'
+        - 'never called topic'
+
+    - name: immediate handler
+      debug:
+        msg: 'immediate handler executed'
+
+    - name: named handler
+      debug:
+        msg: 'named handler executed'
+      listen: 'listen topic'
+
+    # Removing the name prevents accidental name notification
+    # It will only execute on 'listen topic' after the others are finished
+    - debug:
+        msg: 'order dependent handler executed'
+      listen: 'listen topic'
+...
+```
+
+```
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [Trigger immediate handler] ******************************************
+changed: [localhost]
+
+RUNNING HANDLER [immediate handler] ***************************************
+ok: [localhost] => {
+    "msg": "immediate handler executed"
+}
+
+TASK [Retrigger named handler] ********************************************
+changed: [localhost]
+
+TASK [Trigger listen topic] ***********************************************
+changed: [localhost]
+
+RUNNING HANDLER [unnamed handler] *****************************************
+ok: [localhost] => {
+    "msg": "unnamed handler executed"
+}
+
+RUNNING HANDLER [named handler] *******************************************
+ok: [localhost] => {
+    "msg": "named handler executed"
+}
+
+RUNNING HANDLER [debug] ***************************************************
+ok: [localhost] => {
+    "msg": "order dependent handler executed"
+}
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=8    changed=3    unreachable=0    failed=0
+```
+
+## Roles
+
+Roles provide a way to reuse Ansible code across plays and playbooks. You can think of a `role` as an isolated play that can be inserted anywhere (while not technically true, it's a good analogy; don't go around the internet quoting that). Roles live beside the playbook in the `roles_path` (default `./roles`), and have [a well-defined directory structure](http://docs.ansible.com/ansible/latest/playbooks_reuse_roles.html#role-directory-structure). Instead of being declared in a file, roles are constructed from the contents of their respective directory, `<role path>/<role name>`. Any missing components are simply ignored, although at least one has to exist.
+
+Examples make that wall of text more palatable. Let's recode some of the [Tasks](#tasks) as `roles`.
+
+A great starting point is the `package` task. A descriptive name like `installs_common_dependencies` makes it easy to reference. To simply duplicate the task example, this is all that's necessary:
+
+```
+$ tree roles
+roles
+└── installs_common_dependencies
+    └── tasks
+        └── main.yml
+
+2 directories, 1 file
+```
+
+{% raw %}
+```yaml
+# roles/installs_common_dependencies/tasks/main.yml
+---
+- name: Ensure dependencies are installed
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - git
+    - bash
+  become: yes
+```
+{% endraw %}
+
+The role can now easily be included in a play as a top-level attribute. The `roles` block is compiled to a list of `tasks` and run exactly like a `task` block. `roles` are [run after `pre_tasks` but before `tasks`](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/play.py#L271).
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+
+  roles:
+    - role: installs_common_dependencies
+
+  pre_tasks:
+    - debug:
+        msg: pre_tasks
+
+  tasks:
+    - debug:
+        msg: tasks
+```
+
+```
+$ ansible-playbook scratch.yml --ask-become-pass
+SUDO password:
+
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [debug] **************************************************************
+ok: [localhost] => {
+    "msg": "pre_tasks"
+}
+
+TASK [installs_common_dependencies : Ensure dependencies are installed] ***
+ok: [localhost] => (item=git)
+ok: [localhost] => (item=bash)
+
+TASK [debug] **************************************************************
+ok: [localhost] => {
+    "msg": "tasks"
+}
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0
+```
+
+By default, Ansible searches each block component directory for a `main.yml` file, e.g. Ansible needs `tasks/main.yml` but doesn't care about `files/main.yml` (more on that later). You can include other files that will be ignored unless you explicitly include them.
+
+If we try to run `installs_common_dependencies` on a Windows target, we're going to run into issues. `package` doesn't work on operating systems whose primary package manager is Bing via Internet Explorer. Let's expand the tasks to handle different OS families:
+
+```
+$ tree roles
+roles
+└── installs_common_dependencies
+    └── tasks
+        ├── main.yml
+        ├── not_windows.yml
+        └── windows.yml
+
+2 directories, 3 files
+```
+
+{% raw %}
+```yaml
+# roles/installs_common_dependencies/tasks/main.yml
+---
+- include_tasks: windows.yml
+  when: ansible_distribution|regex_search('([mM]icrosoft|[wW]indows)')
+
+- include_tasks: not_windows.yml
+  when: not ansible_distribution|regex_search('([mM]icrosoft|[wW]indows)')
+```
+```yaml
+# roles/installs_common_dependences/tasks/not_windows.yml
+---
+- name: Ensure dependencies are installed
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - git
+    - bash
+  become: yes
+```
+{% endraw %}
+**WARNING:** I haven't actually tested this (or any of following improvements) on a Windows machine because [setting it up](http://docs.ansible.com/ansible/latest/intro_windows.html) requires more time than I feel like spending in PowerShell this weekend. Use at your own risk.
+{% raw %}
+```yaml
+# roles/installs_common_dependences/tasks/windows.yml
+---
+- name: Badger the user
+  debug:
+    msg: 'There is hope available--Google "microsoft windows replacement"'
+
+- name: Ensure dependences are installed via chocolatey
+  win_chocolatey:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - posh-git
+
+- name: Ensures necessary features are installed
+  win_feature:
+    name: "{{ item }}"
+    state: present
+    include_management_tools: yes
+    include_sub_features: yes
+    reboot_required: yes
+  with_items:
+    - Windows Subsystem for Linux
+```
+{% endraw %}
+
+Splitting out the OS tasks has created a maintenance annoyance: we've now got two files to update when we want to modify the role. Luckily, Ansible has a solid solution for that.
+
+```
+$ tree roles
+roles
+└── installs_common_dependencies
+    ├── defaults
+    │   └── main.yml
+    └── tasks
+        ├── main.yml
+        ├── not_windows.yml
+        └── windows.yml
+
+3 directories, 4 files
+```
+{% raw %}
+```yaml
+# roles/installs_common_dependencies/defaults/main.yml
+---
+common_dependencies:
+  easy:
+    - git
+    - bash
+  hard:
+    choco:
+      - poshgit
+    features:
+      - Windows Subsystem for Linux
+```
+```yaml
+# roles/installs_common_dependences/tasks/not_windows.yml
+---
+- name: Ensure dependencies are installed
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ common_dependencies['easy'] }}"
+  become: yes
+```
+```yaml
+# roles/installs_common_dependences/tasks/windows.yml
+---
+- name: Badger the user
+  debug:
+    msg: 'There is hope available--Google "microsoft windows replacement"'
+
+- name: Ensure dependences are installed via chocolatey
+  win_chocolatey:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ common_dependencies['hard']['choco'] }}"
+
+- name: Ensures necessary features are installed
+  win_feature:
+    name: "{{ item }}"
+    state: present
+    include_management_tools: yes
+    include_sub_features: yes
+    reboot_required: yes
+  with_items: "{{ common_dependencies['hard']['features'] }}"
+```
+{% endraw %}
+
+```
+$ ansible-playbook scratch.yml --ask-become-pass
+SUDO password:
+
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [installs_common_dependencies : include_tasks] ***********************
+skipping: [localhost]
+
+TASK [installs_common_dependencies : include_tasks] ***********************
+included: <truncated>/roles/installs_common_dependencies/tasks/not_windows.yml for localhost
+
+TASK [installs_common_dependencies : Ensure dependencies are installed] ***
+ok: [localhost] => (item=git)
+ok: [localhost] => (item=bash)
+
+PLAY RECAP ****************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0
+```
+
+Roles also provide a local directory for includable files and templates. Any items in `<role name>/files` or `<role name>/templates` can be referenced relatively, rather than trying to piece together an absolute path.
+
+We can quickly expand the current example to copy a common `.gitconfig` to the user's home directory. (Note: I'm going to abandon the pretense of Windows support because I have more interesting things to write about. Sorry not sorry.) I like to treat `files` and `templates` as `/`, which makes managing the imports and templates much easier at the cost of lots of directories.
+
+```
+$ tree roles
+roles
+└── installs_common_dependencies
+    ├── defaults
+    │   └── main.yml
+    ├── files
+    │   └── home
+    │       └── user
+    │           └── gitconfig
+    └── tasks
+        ├── main.yml
+        ├── not_windows.yml
+        └── windows.yml
+
+6 directories, 5 files
+
+```
+
+{% raw %}
+```
+# roles/installs_common_dependencies/files/home/user/gitconfig
+[help]
+        autocorrect = 1
+[core]
+        autocrlf = input
+[push]
+        default = matching
+```
+```yaml
+# roles/installs_common_dependences/tasks/not_windows.yml
+---
+- name: Ensure dependencies are installed
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ common_dependencies['easy'] }}"
+  become: yes
+
+- name: Ensure user gitconfig exists
+  copy:
+    src: home/user/gitconfig
+    dest: "/home/{{ ansible_user }}/.gitconfig"
+    force: no
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: 'ug=rw,o=r'
+```
+{% endraw %}
+
+```
+$ ansible-playbook scratch.yml --ask-become-pass
+SUDO password:
+
+PLAY [localhost] **********************************************************
+
+TASK [Gathering Facts] ****************************************************
+ok: [localhost]
+
+TASK [installs_common_dependencies : include_tasks] ***********************
+skipping: [localhost]
+
+TASK [installs_common_dependencies : include_tasks] ***********************
+included: <truncated>/roles/installs_common_dependencies/tasks/not_windows.yml for localhost
+
+TASK [installs_common_dependencies : Ensure dependencies are installed] ***
+ok: [localhost] => (item=git)
+ok: [localhost] => (item=bash)
+
+TASK [installs_common_dependencies : Ensure user gitconfig exists] ********
+ok: [localhost]
+
+PLAY RECAP ****************************************************************localhost                  : ok=4    changed=0    unreachable=0    failed=0
+```
+
+Roles can also include metadata via `<role name>/meta`. At the moment, there are [only three meta attributes](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/role/metadata.py):
+
+* `allow_duplicates`: This allows a `role` [to be duplicated](http://docs.ansible.com/ansible/latest/playbooks_reuse_roles.html#role-duplication-and-execution) without unique options. By default, a `role` is only executed once per play no matter how many times it's referenced.
+* `dependencies`: This list allows you to [prepend any `role` dependencies](http://docs.ansible.com/ansible/latest/playbooks_reuse_roles.html#role-dependencies) before executing the current `role`. The process [loads recursively](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/role/__init__.py#L278), so you don't have to worry about including dependency dependencies. If the order of inclusion matters, consider setting `allow_duplicates` on the dependencies (but first try to refactor that behavior out).
+* `galaxy_info`: This contains metadata for [Ansible Galaxy](https://galaxy.ansible.com/). Ansible Galaxy is a fantastic resource for both great roles and Ansible usage, as it contains roles written by solid developers consumed by users all over (I can say they're written by solid developers because I haven't published any roles yet).
+
+## Recap
+
+Ansible is amazing. By now you should be able to [set its configuration](#configuration), quickly [test tasks](#adhoccommands), [construct playbooks](#playbooks), and create [reusable content](#roles). The best part of this whole post is that I've barely scratched the surface. Google, StackExchange, and the official docs have so many good ideas to try out. There's so much more that I'd love to write about but I really need to publish this and move on to the actual project: automating and securing SSH configuration.
+
+{% endblock %}
