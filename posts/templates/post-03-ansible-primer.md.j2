@@ -681,7 +681,7 @@ localhost                  : ok=8    changed=3    unreachable=0    failed=0
 
 Roles provide a way to reuse Ansible code across plays and playbooks. You can think of a `role` as an isolated play that can be inserted anywhere (don't go around the internet quoting me verbatim; while not technically true, it's a good analogy). Roles usually live beside the playbook in the `./roles` (you can specify fancier setups via `roles_path`), and have [a well-defined directory structure](http://docs.ansible.com/ansible/latest/playbooks_reuse_roles.html#role-directory-structure). Instead of being declared in a single file like playbooks, roles are constructed from the contents of their respective directory, `<role path>/<role name>`. Any missing components are simply ignored, although at least one has to exist.
 
-Examples make that wall of text more palatable. Let's recode some of the [Tasks](#tasks) as `roles`. A great starting point is the `package` task. A descriptive name like `installs_common_dependencies` makes it easy to reference. To simply duplicate the task example, this is all that's necessary:
+Examples make that wall of text more palatable. Let's recode one of the [Tasks](#tasks) as `roles`. A great starting point is the `package` task. A descriptive name like `installs_common_dependencies` makes it easy to reference. To simply duplicate the task example, this is all that's necessary:
 
 ```
 $ tree roles
