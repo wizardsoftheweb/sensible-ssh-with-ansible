@@ -379,7 +379,7 @@ Tasks can be run conditionally via `when`. There are plenty of good reasons for 
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: 'ugo=rw'
-      when: cache_age.stat.mtime < ansible_date_time.epoch - max_cache_age
+      when: cache_age.stat.exists == false or cache_age.stat.mtime|int < (ansible_date_time.epoch|int - max_cache_age|int)
 
     - name: Run when local fact is truthy
       expect:
