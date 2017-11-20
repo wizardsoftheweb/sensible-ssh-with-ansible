@@ -453,7 +453,7 @@ PLAY RECAP ****************************************************************
 localhost                  : ok=2    changed=0    unreachable=0    failed=0
 ```
 
-Tasks can also be [looped via `with_items`](http://docs.ansible.com/ansible/latest/playbooks_loops.html). This makes duplicating tasks much easier, and also allow each task to execute on a single item only. The task iterates of the contents of `with_items`, (coerced to) a list, using `item` as a placeholder. ([The loop docs](http://docs.ansible.com/ansible/latest/playbooks_loops.html) cover other very useful possibilities, like `with_filetree` and renaming `loop_var`; RTFM) For example, the [suggested way to install packages](http://docs.ansible.com/ansible/latest/playbooks_loops.html#standard-loops) looks like this:
+Tasks can also be [looped via `with_items`](http://docs.ansible.com/ansible/latest/playbooks_loops.html). This makes duplicating tasks much easier, and also allows each task to focus solely on a single action. The task iterates of the contents of `with_items`, (coerced to) a list, using `item` as a placeholder. ([The loop docs](http://docs.ansible.com/ansible/latest/playbooks_loops.html) cover other very useful possibilities, like `with_filetree` and renaming `loop_var`; RTFM) For example, the [suggested way to install packages](http://docs.ansible.com/ansible/latest/playbooks_loops.html#standard-loops) looks like this:
 
 {% raw %}
 ```yaml
