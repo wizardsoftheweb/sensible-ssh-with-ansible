@@ -754,7 +754,7 @@ PLAY RECAP ****************************************************************
 localhost                  : ok=4    changed=0    unreachable=0    failed=0
 ```
 
-By default, Ansible searches each block component directory for a `main.yml` file, e.g. Ansible needs `tasks/main.yml` but doesn't care about `files/main.yml` (more on that later). You can include other files that will be ignored unless you explicitly include them.
+By default, Ansible searches each block component directory for a `main.yml` file, e.g. Ansible needs `tasks/main.yml` but doesn't care about `files/main.yml` (more on that later). You can include other files in those directories without issue. Ansible will completely ignore them (i.e. anything not `main.yml`) until you explicitly include them.
 
 If we try to run `installs_common_dependencies` on a Windows target, we're going to run into issues. `package` doesn't work on operating systems whose primary package manager is Bing via Internet Explorer. Let's expand the tasks to handle different OS families:
 
