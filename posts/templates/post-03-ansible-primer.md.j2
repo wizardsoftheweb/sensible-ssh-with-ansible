@@ -885,8 +885,14 @@ common_dependencies:
     state: present
     include_management_tools: yes
     include_sub_features: yes
-    reboot_required: yes
+  register: features_update
   with_items: "{{ common_dependencies['hard']['features'] }}"
+
+- name: Reboot if necessary (usually is)
+  win_reboot:
+  # I honestly have no idea if this works
+  # I also honestly have no idea how to build a context to test it
+  when: True in features_update.results|map(attribute='reboot_required')|list|unique
 ```
 {% endraw %}
 
