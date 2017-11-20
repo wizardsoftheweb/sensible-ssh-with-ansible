@@ -25,3 +25,4 @@ The whole point of containers is slim isolation. Unless your app depends on `ssh
 
 * Dynamic inventories
 * Ansible Galaxy
+* Ansible Vault
