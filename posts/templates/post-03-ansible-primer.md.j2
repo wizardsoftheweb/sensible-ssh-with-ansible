@@ -32,13 +32,15 @@ Ansible only loads the first file it finds. It won't merge, say, a local directo
 
 ### `ansible-config`
 
-If you're using Ansible `>=2.4`, you can quickly check any changes via `ansible-config`:
+If you're using Ansible `>=2.4`, you can quickly check any changes via `ansible-config`. If you're not using Ansible `>=2.4` and don't have a serious architecture reason to resist change, pause, go update Ansible, and come back.
+
+The `--only-changed` flag with `dump` is mind-blowingly useful when trying to figure out what's not stock:
 
 ```
 $ ansible-config dump --only-changed
 ```
 
-You can also view the entire configuration, which is insanely useful for debugging.
+You can also view the entire configuration, which is just as insanely useful for debugging as the `--only-changed` refinement.
 
 ## Inventory
 
