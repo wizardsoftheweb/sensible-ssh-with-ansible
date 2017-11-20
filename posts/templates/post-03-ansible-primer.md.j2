@@ -14,7 +14,7 @@ TODO: explain
 
 ## Configuration
 
-If you're a masochist and enjoy manually specifying every option and every flag flag on every Ansible command directly, skip this section. If that doesn't sound fun, you can instead use a configuration file to [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) your scripting.
+If you're a masochist and enjoy manually specifying every option and every flag on every Ansible command directly, skip this section. If that doesn't sound fun, you can instead use a configuration file to [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) your scripting.
 
 [Out of the box](http://docs.ansible.com/ansible/latest/intro_configuration.html), Ansible loads its (possibly empty) global configuration file, `/etc/ansible/ansible.cfg`. If you're working in a shared environment, or previously set up Ansible, Ansible might load an environment or userspace config file instead. Luckily, Ansible conveniently provides its discovered config with the `--version` flag:
 
@@ -30,7 +30,7 @@ ansible 2.4.1.0
   ...
 ```
 
-Ansible only loads the first file it finds. It won't merge, say, a local directory config and your global `$HOME` config. Ansible starts with [its base configuration](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/config/base.yml) and updates only the values you've specified.
+Ansible only loads the first file it finds. It won't merge, say, a local directory config and your global `$HOME` config. Ansible starts with [its base configuration](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/config/base.yml) and updates only the values you've specified. If you're not paying attention, this can often bite you. For example, the default inventory, `/etc/ansible/hosts`, probably doesn't contain the hosts you're about to set up. You'll either have to always specify a local inventory at execution via the `-i`nventory flag or add `inventory = /path/to/inventory` to the project's main config file once.
 
 ### `ansible-config`
 
