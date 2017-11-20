@@ -6,4 +6,8 @@ If you're using Vagrant on Windows with Hyper-V, there's a good chance you'll ne
 {% if post_number > 2 %}
 
 I'm still fairly new to Ansible, so if something is horribly wrong, please let me know and I'll fix it ASAP. I've tried to follow [the best practices](http://docs.ansible.com/ansible/latest/playbooks_best_practices.html). I still don't know what I don't know about Ansible, so the code might change drastically from post to post as I discover new things.
+{% if post_number > 4 %}
+
+I'm a huge fan of the [`tree` command](http://mama.indstate.edu/users/ice/tree/). At the start of this series, I was using `tree` to include directory structure in posts. After the second post, I realized using `tree` to rebuild old posts with the current files was going to be problematic at best. To solve that problem, I wrote [a `git` extension, `git-ls-anytree`](https://pypi.python.org/pypi/git-ls-anytree). I honestly have no idea why you might want to pretty-print `git` tree(ish)s in the wild, but if you've got a good use case, I'd love to hear about it.
+{% endif %}
 {% endif %}
