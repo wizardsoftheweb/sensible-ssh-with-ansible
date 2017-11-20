@@ -941,7 +941,6 @@ roles
 6 directories, 5 files
 
 ```
-
 {% raw %}
 ```
 # roles/installs_common_dependencies/files/home/user/gitconfig
@@ -995,7 +994,8 @@ ok: [localhost] => (item=bash)
 TASK [installs_common_dependencies : Ensure user gitconfig exists] ********
 ok: [localhost]
 
-PLAY RECAP ****************************************************************localhost                  : ok=4    changed=0    unreachable=0    failed=0
+PLAY RECAP ****************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0
 ```
 
 Roles can also include metadata via `<role name>/meta`. At the moment, there are [only three meta attributes](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/role/metadata.py):
