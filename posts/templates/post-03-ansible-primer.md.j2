@@ -16,7 +16,7 @@ If you're a masochist and enjoy manually specifying every option and every flag 
 
 [Out of the box](http://docs.ansible.com/ansible/latest/intro_configuration.html), Ansible loads its (possibly empty) global configuration file, `/etc/ansible/ansible.cfg`. If you're working in a shared environment, or previously set up Ansible, Ansible might load an environment or userspace config file instead. Luckily, Ansible conveniently provides its discovered config with the `--version` flag:
 
-```
+{{ shell_block('''
 $ ansible --version
 ansible 2.4.1.0
   config file = None
@@ -26,7 +26,7 @@ $ ansible --version
 ansible 2.4.1.0
   config file = /home/user/.ansible.cfg
   ...
-```
+'''.encode('utf-8')) }}
 
 Ansible only loads the first file it finds. It won't merge, say, a local directory config and your global `$HOME` config. Ansible starts with [its base configuration](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/config/base.yml) and updates only the values you've specified. If you're not paying attention, this can often bite you. For example, the default inventory, `/etc/ansible/hosts`, probably doesn't contain the hosts you're about to set up. You'll either have to specify a local inventory at execution via the `-i`nventory flag always or add `inventory = /path/to/inventory` to the project's main config file once. I prefer the latter option.
 
@@ -36,9 +36,9 @@ If you're using Ansible `>=2.4`, you can quickly verify config via `ansible-conf
 
 The `--only-changed` flag with `dump` is mind-blowingly useful when trying to figure out what's not stock:
 
-```
+{{ shell_block('''
 $ ansible-config dump --only-changed
-```
+'''.encode('utf-8')) }}
 
 You can also view the entire configuration, which is just as insanely useful for debugging as the `--only-changed` refinement.
 
@@ -93,7 +93,7 @@ all:
 
 To make managing all of this information easier, you can split out group and host `vars`. Ansible searches for `group_vars/groupname.yml` and `host_vars/hostname.yml` in the `inventory` path. If found, Ansible merges those `vars` in with the variables defined in the `inventory_file`.
 
-```
+{{ shell_block('''
 $ tree example-inventory
 example_inventory
 ├── group_vars
@@ -105,7 +105,7 @@ example_inventory
 └── ungrouped.yml
 
 2 directories, 5 files
-```
+'''.encode('utf-8')) }}
 
 [The precedence](http://docs.ansible.com/ansible/latest/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable) might be surprising: facts from an inventory file are replaced by facts from `(group|host)_vars`. Using the above example, these values represent the final value of facts defined in multiple locations (assuming they're only set in the inventory):
 
@@ -146,31 +146,29 @@ host_vars_final_say: 'host_vars/specific_hostname.yml'
 
 Ansible exposes its API for quick access via [ad-hoc commands](http://docs.ansible.com/ansible/latest/intro_adhoc.html). Ad-hoc commands aren't run as part of a playbook, so they're very useful for debugging or one-off calls. Similar to tasks inside a playbook (explained [later](#playbooks)), you must specify the host(s), the module, and its arguments.
 
-```
-$ ansible <host or group> -m <module name> -a '<arguments to pass to the module>'
-```
+{{ shell_block('''
+$ ansible <host or group> -m <module name> -a "<arguments to pass to the module>"
+'''.encode('utf-8')) }}
 
 A common "hello world" command uses [the `ping` module](http://docs.ansible.com/ansible/latest/ping_module.html):
 
-```
+{{ shell_block('''
 $ ansible --connection=local localhost -m ping
 localhost | SUCCESS => {
     "changed": false,
     "failed": false,
     "ping": "pong"
 }
-```
+'''.encode('utf-8')) }}
 
 [The `debug` module](http://docs.ansible.com/ansible/latest/debug_module.html) provides a fast way to view variables. For example, let's check a few Ansible variables against `localhost`:
 
-{% raw %}
-```
-$ ansible --connection=local localhost -m debug -a 'msg="Host is {{ ansible_host }} as {{ inventory_hostname }} defined {{ 'locally' if inventory_file is not defined else ('in ' + inventory_file) }}"'
+{{ shell_block('''
+$ ansible --connection=local localhost -m debug -a \'msg="Host is \{\{ ansible_host \}\} as \{\{ inventory_hostname \}\} defined \{\{ \'locally\' if inventory_file is not defined else (\'in \' + inventory_file) \}\}"\'
 localhost | SUCCESS => {
     "msg": "Host is 127.0.0.1 as localhost defined locally"
 }
-```
-{% endraw %}
+'''.encode('utf-8')) }}
 
 There are no ad-hoc commands in [the actual codebase]({{  github_path(current_tag, 'provisioning') }}), as the calls are all in playbooks or roles. However, I might occasionally use an ad-hoc command to illustrate a task, and I highly recommend running tasks here as commands to understand how they work.
 
@@ -195,7 +193,7 @@ Ansible proper runs blocks of actions on hosts in [YAML files called playbooks](
 
 When run, it looks something like this:
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml
 PLAY [localhost] **********************************************************
 
@@ -212,7 +210,7 @@ ok: [localhost] => {
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=3    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 ### Jinja2
 
@@ -323,7 +321,7 @@ In practice, it's usually a good idea to at least provide a `name` for logging:
 ...
 ```
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml
 PLAY **********************************************************************
 
@@ -342,7 +340,7 @@ ok: [localhost] => {
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=3    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 It's often useful to pass information from one task to another. Each module returns the result (if any) of its action (check its format via `ansible-doc` or the online docs) as well as [common values](http://docs.ansible.com/ansible/latest/common_return_values.html). Usually, you're getting [the result of `AnsibleModule.run_command`](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/module_utils/basic.py#L2559) after the module processes its results. To access this return elsewhere, include `register: name_to_register_as`, which [creates a new fact](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/plugins/strategy/__init__.py#L368) scoped to the play, i.e. accessible to tasks within the play but not elsewhere.
 
@@ -364,14 +362,14 @@ It's often useful to pass information from one task to another. Each module retu
 ...
 ```
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml
 PLAY **********************************************************************
 
 TASK [setup] **************************************************************
 ok: [localhost]
 
-TASK [Illustrate registering a task's output] *****************************
+TASK [Illustrate registering a task\'s output] *****************************
 ok: [localhost]
 
 TASK [Output previous result] *********************************************
@@ -386,7 +384,7 @@ ok: [localhost] => {
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=3    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 Tasks can be run conditionally via `when`. There are plenty of good reasons for conditional tasks, like performing OS-specific actions, running state-dependent processes, or including/excluding items based on local facts. Tasks whose execution is dependent on the status of other tasks are better handled (pun intended) via [Handlers](#handlers).
 
@@ -430,7 +428,7 @@ Tasks can be run conditionally via `when`. There are plenty of good reasons for 
 ```
 {% endraw %}
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml
 PLAY [localhost] **********************************************************
 
@@ -451,7 +449,7 @@ skipping: [localhost]
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=2    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 Tasks can also be [looped via `with_items`](http://docs.ansible.com/ansible/latest/playbooks_loops.html). This makes duplicating tasks much easier, and also allows each task to focus solely on a single action. The task iterates of the contents of `with_items`, (coerced to) a list, using `item` as a placeholder. ([The loop docs](http://docs.ansible.com/ansible/latest/playbooks_loops.html) cover other very useful possibilities, like `with_filetree` and renaming `loop_var`; RTFM) For example, the [suggested way to install packages](http://docs.ansible.com/ansible/latest/playbooks_loops.html#standard-loops) (on targets whose shell can install packages by default, so not Windows) looks like this:
 
@@ -471,7 +469,7 @@ Tasks can also be [looped via `with_items`](http://docs.ansible.com/ansible/late
 ```
 {% endraw %}
 
-```
+{{ shell_block('''
 $ ansible-playbook provisioning/scratch.yml --ask-become-pass
 SUDO password:
 
@@ -486,7 +484,7 @@ ok: [localhost] => (item=bash)
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=2    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 ### Handlers
 
@@ -510,7 +508,7 @@ localhost                  : ok=2    changed=0    unreachable=0    failed=0
 ```
 This play templates the config for `some-service`, and, if the file changed, restarts `some-service`. Ansible will always attempt to run the second task, skipping it when nothing changed, as you can see below:
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml
 PLAY [localhost] **********************************************************
 
@@ -540,7 +538,7 @@ skipping: [localhost]
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=2    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 Handlers provide a convenience wrapper for that logic. Rather than `register`ing its output, a task can `notify` a handler. Handlers are defined in the `handlers` block of a play. Since `handlers` aren't executed in the linear manner `tasks` are run, you can quickly reuse the same handler across an entire `tasks` block. By default, `handlers` are queued at the end of each `tasks` without duplication. You can immediately flush the `handlers` queue by including a `meta: flush_handlers` task to override this behavior (do note the queue will still be flushed at the end of the `tasks` block). Like `tasks`, `handlers` are executed linearly in [the order they are defined](http://docs.ansible.com/ansible/latest/playbooks_intro.html#handlers-running-operations-on-change). This provides some structure for handler dependencies and makes notifying multiple handlers easier; after you declare the `handlers` in the order they must be run, you can `notify` them in any order.
 
@@ -563,7 +561,7 @@ Refactoring the leading example gives something like this:
 ...
 ```
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml
 PLAY [localhost] **********************************************************
 
@@ -590,7 +588,7 @@ ok: [localhost]
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=2    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 It's also possible to trigger multiple `handlers` with a single `notify`. Include `listen: 'some string'` in the handler body to add additional `notify` topics. `listen` is [defined as a `list`](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/handler.py#L28), so you can add multiple triggers if desired.
 
@@ -637,7 +635,7 @@ It's also possible to trigger multiple `handlers` with a single `notify`. Includ
 ...
 ```
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml
 PLAY [localhost] **********************************************************
 
@@ -675,7 +673,7 @@ ok: [localhost] => {
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=8    changed=3    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 ## Roles
 
@@ -683,7 +681,7 @@ Roles provide a way to reuse Ansible code across plays and playbooks. You can th
 
 Examples make that wall of text more palatable. Let's recode one of the [Tasks](#tasks) as `roles`. A great starting point is the `package` task. A descriptive name like `installs_common_dependencies` makes it easy to reference. To simply duplicate the task example, this is all that's necessary:
 
-```
+{{ shell_block('''
 $ tree roles
 roles
 └── installs_common_dependencies
@@ -691,7 +689,7 @@ roles
         └── main.yml
 
 2 directories, 1 file
-```
+'''.encode('utf-8')) }}
 
 {% raw %}
 ```yaml
@@ -727,7 +725,7 @@ The role can now easily be included in a play as a top-level attribute. The `rol
         msg: tasks
 ```
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml --ask-become-pass
 SUDO password:
 
@@ -752,13 +750,13 @@ ok: [localhost] => {
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=4    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 By default, Ansible searches each block component directory for a `main.yml` file, e.g. Ansible needs `tasks/main.yml` but doesn't care about `files/main.yml` (more on that later). You can include other files in those directories without issue. Ansible will completely ignore them (i.e. anything not `main.yml`) until you explicitly include them.
 
 If we try to run `installs_common_dependencies` on a Windows target, we're going to run into issues. `package` doesn't work on operating systems whose default package manager is Bing via Internet Explorer. Let's expand the tasks to handle different OS families:
 
-```
+{{ shell_block('''
 $ tree roles
 roles
 └── installs_common_dependencies
@@ -768,7 +766,7 @@ roles
         └── windows.yml
 
 2 directories, 3 files
-```
+'''.encode('utf-8')) }}
 
 {% raw %}
 ```yaml
@@ -829,7 +827,7 @@ roles
 
 Splitting out the OS tasks has created a maintenance annoyance: we've now got two files to update when we want to modify the role. Luckily, Ansible has a solid solution for that.
 
-```
+{{ shell_block('''
 $ tree roles
 roles
 └── installs_common_dependencies
@@ -841,7 +839,8 @@ roles
         └── windows.yml
 
 3 directories, 4 files
-```
+'''.encode('utf-8')) }}
+
 {% raw %}
 ```yaml
 # roles/installs_common_dependencies/defaults/main.yml
@@ -896,7 +895,7 @@ common_dependencies:
 ```
 {% endraw %}
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml --ask-become-pass
 SUDO password:
 
@@ -917,13 +916,13 @@ ok: [localhost] => (item=bash)
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=3    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 Roles also provide a local directory for includable files and templates. Any items in `<role name>/files` or `<role name>/templates` can be referenced relatively, rather than trying to piece together an absolute path. If these directories contain a `main.yml`, it won't do anything unless referenced as the target of a module.
 
 We can quickly expand the current example to copy a common `.gitconfig` to the user's home directory. (Note: I'm going to abandon the pretense of Windows support because I have more interesting things to write about. Sorry not sorry.) I like to treat `files` and `templates` as `/`, which makes managing the imports and templates much easier at the cost of lots of directories.
 
-```
+{{ shell_block('''
 $ tree roles
 roles
 └── installs_common_dependencies
@@ -939,8 +938,8 @@ roles
         └── windows.yml
 
 6 directories, 5 files
+'''.encode('utf-8')) }}
 
-```
 {% raw %}
 ```
 # roles/installs_common_dependencies/files/home/user/gitconfig
@@ -972,7 +971,7 @@ roles
 ```
 {% endraw %}
 
-```
+{{ shell_block('''
 $ ansible-playbook scratch.yml --ask-become-pass
 SUDO password:
 
@@ -996,7 +995,7 @@ ok: [localhost]
 
 PLAY RECAP ****************************************************************
 localhost                  : ok=4    changed=0    unreachable=0    failed=0
-```
+'''.encode('utf-8')) }}
 
 Roles can also include metadata via `<role name>/meta`. At the moment, there are [only three meta attributes](https://github.com/ansible/ansible/blob/v2.4.1.0-1/lib/ansible/playbook/role/metadata.py):
 
