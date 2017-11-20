@@ -164,7 +164,7 @@ localhost | SUCCESS => {
 [The `debug` module](http://docs.ansible.com/ansible/latest/debug_module.html) provides a fast way to view variables. For example, let's check a few Ansible variables against `localhost`:
 
 {{ shell_block('''
-$ ansible --connection=local localhost -m debug -a \'msg="Host is {{ ansible_host }} as {{ inventory_hostname }} defined {{ \\\'locally\\\' if inventory_file is not defined else (\\\'in \\\' + inventory_file) }}"\'
+$ ansible --connection=local localhost -m debug -a \'msg="Host is {{ ansible_host }} as {{ inventory_hostname }} defined {{ \"locally\" if inventory_file is not defined else (\"in \" + inventory_file) }}"\'
 localhost | SUCCESS => {
     "msg": "Host is 127.0.0.1 as localhost defined locally"
 }
