@@ -231,8 +231,15 @@ not_parsed: this entire string
 easier_to_skim_not_parsed: 'this entire string'
 
 user_config_directory: "/home/{{ ansible_user }}/.config"
-important_setting: "{{ important_value|default('not that important i guess') }}"
+# /home/me/.config
+
+important_value: None
+important_setting: "{{ important_value|default('not that important i guess', true) }}"
+# not that important i guess
+
 number_of_seconds_in_a_day_usually: "{{ 60 * 60 * 24 }}"
+# 86400
+
 a_dict:
   property_one: yes
   property_two: no
