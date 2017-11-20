@@ -35,6 +35,48 @@ def include_with_default(current_tag, relative_path, language):
     new_include += '```\n'
     return new_include.decode('utf-8')
 
+def build_data_output(shell_contents):
+    lines = shell_contents.strip().split('\n')
+    data_output = list()
+    range_start = 0
+    range_end = -1
+    for index, line in enumerate(lines):
+        sanitized_line = sub(r'<', '&lt;', line.decode('utf-8'))
+        range_start = (
+            range_start
+            if range_start > 0
+            else (index + 2)
+        )
+        if sanitized_line.startswith('$'):
+            range_end = index
+            lines[index] = sub(r'^\$\s+', '', sanitized_line)
+        else:
+            lines[index] = sanitized_line
+        if range_end > -1:
+            if range_end >= range_start:
+                data_output.append(str(
+                    str(range_start)
+                    + (
+                        ('-' + str(range_end))
+                        if range_end > range_start
+                        else ''
+                    )
+                ))
+                range_start = 0
+            range_end = -1
+    # Catch possible final output
+    if range_end < 0 and range_start > 0:
+        data_output.append(str(
+            str(range_start)
+            + (
+                ('-' + str(len(lines)))
+                if len(lines) > range_start
+                else ''
+            )
+        ))
+    return '\n'.join(lines), ','.join(data_output)
+
+
 used_headlines = dict()
 def link_header(matched_line):
     global used_headlines
@@ -55,6 +97,7 @@ jinja_env = Environment(
 jinja_env.globals['include_with_default'] = include_with_default
 jinja_env.globals['num2words'] = num2words
 jinja_env.globals['run_bash'] = run_bash
+jinja_env.globals['build_data_output'] = build_data_output
 
 for post_filename in glob(path.join(template_dir, 'post-*.j2')):
     used_headlines = dict()
