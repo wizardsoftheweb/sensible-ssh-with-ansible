@@ -56,6 +56,9 @@ The first component of an inventory entry ([in YAML, at least](https://github.co
 ---
 my_first_group:
   # ...
+all:
+  # ...
+  # also magically contains my_first_group
 ```
 
 Below the group is its defining characteristics such as its child `hosts`, any `children` groups, and group-scope `vars`.
