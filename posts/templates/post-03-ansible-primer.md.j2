@@ -919,7 +919,7 @@ PLAY RECAP ****************************************************************
 localhost                  : ok=3    changed=0    unreachable=0    failed=0
 ```
 
-Roles also provide a local directory for includable files and templates. Any items in `<role name>/files` or `<role name>/templates` can be referenced relatively, rather than trying to piece together an absolute path.
+Roles also provide a local directory for includable files and templates. Any items in `<role name>/files` or `<role name>/templates` can be referenced relatively, rather than trying to piece together an absolute path. If these directories contain a `main.yml`, it won't do anything unless referenced as the target of a module.
 
 We can quickly expand the current example to copy a common `.gitconfig` to the user's home directory. (Note: I'm going to abandon the pretense of Windows support because I have more interesting things to write about. Sorry not sorry.) I like to treat `files` and `templates` as `/`, which makes managing the imports and templates much easier at the cost of lots of directories.
 
