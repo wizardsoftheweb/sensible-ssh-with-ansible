@@ -91,7 +91,7 @@ all:
       host_scoped_variable: 'not accessible to its group'
 ```
 
-To make managing all of this information easier, you can split out group and host `vars`. Ansible searches for `group_vars/groupname.yml` and `host_vars/hostname.yml` in the `inventory` path. If found, Ansible merges those `vars` in with the variables define in the `inventory_file`.
+To make managing all of this information easier, you can split out group and host `vars`. Ansible searches for `group_vars/groupname.yml` and `host_vars/hostname.yml` in the `inventory` path. If found, Ansible merges those `vars` in with the variables defined in the `inventory_file`.
 
 ```
 $ tree example-inventory
